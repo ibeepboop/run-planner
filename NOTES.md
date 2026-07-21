@@ -58,13 +58,43 @@ wherever the choice exists.
 The exact lesson cadence (lecture-then-exam vs lecture-only vs review-only) was asked but never
 settled. Current format: short explainer, retrieval quiz, then a task she does herself.
 
-## RESUME HERE (last updated session 2, 21 July 2026)
+## RESUME HERE (last updated end of session 2, 21 July 2026)
 
-**Done:** Lessons 1 and 2, both with scratch files and playbacks. See
-[[learning-records/0004-lesson-1-complete]] and [[learning-records/0005-lesson-2-complete]].
-`callback`, `predicate` and `filter` are in `GLOSSARY.md`.
+**Done:** Lessons 1 and 2 complete with playbacks. Lesson 3 (Git) delivered, **steps 1–5 of 7
+done**. See [[learning-records/0004-lesson-1-complete]], [[learning-records/0005-lesson-2-complete]]
+and [[learning-records/0006-git-session-and-work-blocker]]. `callback`, `predicate` and `filter`
+are in `GLOSSARY.md`.
 
-**Nag retired:** she used `const` throughout Lesson 2 unprompted. Stop flagging unless it returns.
+**Repo state:** 2 commits on `main`, clean tree, no remote, no branches yet. `.gitignore` now
+ignores only `/scratch` of the course material — she committed the rest after the ADR argument.
+
+**Pick up with — in order:**
+
+1. **Finish Lesson 3, steps 6–7.** Create `practice-branch`, commit on it, switch back to `main`,
+   and look at `scratch/02-lists.js`. Make her **predict before looking** — that step is the one
+   that makes branches click, and she hasn't done it. (Note `/scratch` is gitignored, so pick a
+   tracked file for the branch experiment instead — e.g. add a line to `README.md`. Fix this in
+   the lesson text.)
+2. **Answer her open question:** she asked for "a copy of the git-switch.html file" in
+   `obsidian/`. No such file exists. Two candidates, unresolved when the session ended: a *new*
+   `reference/git-essentials.html` consolidating this session (commit/staging/branch model,
+   command table, `switch` vs `checkout`, unstaging, the `.gitignore` categories), or a straight
+   Markdown port of `lessons/0003-*.html`. Recommend the new reference doc — the switch/checkout
+   and unstaging material exists **only in the transcript** and will be lost otherwise. Ask in
+   prose, briefly.
+3. **Lesson 4 — remotes, push, pull requests.** Hard blocker for work; she has never used GitHub
+   professionally. Needs a GitHub remote for run-planner to practise against.
+4. Then Track A continues: what an API call is → `fetch`/`async`/`await` → why the token is
+   server-side (the reference doc already covers the *what*; she needs the *how*).
+
+**Nag retired:** `const` used throughout Lesson 2 unprompted. Stop flagging unless it returns.
+
+**New, unverified:** she used a `chore:` prefix on both commits — Conventional Commits, picked up
+somewhere and not taught here. Ask whether her team uses it before endorsing or unpicking it.
+
+**Working style, learned the hard way this session:** don't re-open files she already has open,
+and ask clarifying questions in **prose, not `AskUserQuestion`** — she interrupted both. She
+answers free-form questions well and in detail; the tool is friction.
 
 ## TRACK A — the real work blocker (disclosed end of session 2)
 
