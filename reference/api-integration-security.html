@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reference — Third-Party API Integration: Security &amp; Architecture</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<header class="masthead">
+  <p class="eyebrow">Reference · Run Planner course</p>
+  <h1>Third-Party API Integration</h1>
+  <p class="standfirst">A generic checklist for connecting a web application to an external
+  service API. No product, vendor or employer specifics — safe to carry into any workplace
+  conversation or paste into an enterprise assistant as context.</p>
+</header>
+
+<h2>The architecture, in one diagram</h2>
+
+<pre><code>Browser  ──►  Your server  ──►  Third-party API
+(no secrets)   (holds the        (vendor)
+               credential)
+
+Browser  ──✗──────────────────►  Third-party API
+              never directly, if a credential is involved</code></pre>
+
+<p>Every rule below is a consequence of that one shape.</p>
+
+<h2>1. Credentials</h2>
+
+<table>
+<tr><th>Rule</th><th>Why</th></tr>
+<tr><td>No API token, key or secret ever reaches the browser.</td>
+    <td>Anything the browser can send, a user can read — devtools, view-source, or the network
+    tab. There is no way to hide it, because the browser must be able to read it to use it.</td></tr>
+<tr><td>Secrets live in server-side environment variables or a secret manager, never in source.</td>
+    <td>Committed secrets persist in Git history after deletion, and spread to every clone and
+    fork.</td></tr>
+<tr><td>Separate credentials per environment (dev / staging / prod).</td>
+    <td>A leaked dev credential must not be able to touch production data.</td></tr>
+<tr><td>Use the least-privileged service account the vendor offers.</td>
+    <td>The blast radius of a leak is whatever that account can do.</td></tr>
+<tr><td>Know how to rotate the credential before you need to.</td>
+    <td>Rotation under incident pressure, undocumented, is how outages get long.</td></tr>
+</table>
+
+<div class="callout gotcha">
+  <span class="label">The build-tool trap</span>
+  <p>Front-end build tools inline environment variables into the shipped bundle. In Vite, any
+  variable prefixed <code>VITE_</code> is <strong>embedded in the JavaScript the browser
+  downloads</strong>. Same for <code>NEXT_PUBLIC_</code> and
+  <code>REACT_APP_</code> in their frameworks.</p>
+  <p>"It's in a <code>.env</code> file" is <em>not</em> the same as "it's secret". What matters is
+  which side of the network boundary the code runs on.</p>
+</div>
+
+<h2>2. The server-side proxy</h2>
+
+<p>The server endpoint that fronts the vendor API is often called a <strong>proxy</strong> or a
+<strong>backend-for-frontend (BFF)</strong>. It is not a pass-through. It should:</p>
+
+<ul>
+  <li><strong>Authenticate your own user</strong> — establish who is calling, in your system.</li>
+  <li><strong>Authorise the specific action</strong> — may this user do this, to this record?</li>
+  <li><strong>Validate and narrow the input</strong> — accept only the fields you intend to
+      forward. Never relay a client-supplied body wholesale to a vendor.</li>
+  <li><strong>Attach the credential server-side</strong>, after the checks above.</li>
+  <li><strong>Shape the response</strong> — return only what the client needs.</li>
+</ul>
+
+<div class="callout gotcha">
+  <span class="label">The one that causes real breaches</span>
+  <p>If a client can pass an identifier — a ticket ID, an account ID — and your server fetches it
+  without checking that the caller owns it, any user can read any record by changing a number.
+  This is the most common serious API flaw in production software, and it's a missing
+  <code>if</code> statement.</p>
+  <p>Rule: <strong>derive the owner from the session, never from the request body.</strong>
+  Cross-check every identifier against it.
+  (<a href="https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/">OWASP API Security — Broken Object Level Authorization</a>)</p>
+</div>
+
+<h2>3. Calling out</h2>
+
+<table>
+<tr><th>Concern</th><th>Practice</th></tr>
+<tr><td>Timeouts</td><td>Set an explicit timeout on every outbound call. Without one, a slow vendor
+    becomes your outage as connections pile up.</td></tr>
+<tr><td>Retries</td><td>Retry only idempotent or transient failures (network errors, 429, 5xx),
+    with exponential backoff. Never blind-retry a create.</td></tr>
+<tr><td>Duplicate writes</td><td>A retried "create ticket" can create two. Use the vendor's
+    idempotency key if offered; otherwise de-duplicate on your own request identifier.</td></tr>
+<tr><td>Rate limits</td><td>Know the vendor's limit and what they return when you exceed it
+    (usually <code>429</code>). Handle it deliberately.</td></tr>
+<tr><td>Vendor downtime</td><td>Decide the user-visible behaviour in advance: queue and retry, or
+    fail with an honest message. Both are defensible; silence is not.</td></tr>
+</table>
+
+<h2>4. Errors and logging</h2>
+
+<ul>
+  <li><strong>Never forward a vendor error body to the browser verbatim.</strong> It can leak
+      internal identifiers, field names, account structure, or the existence of records the user
+      shouldn't know about. Log the detail server-side; return a generic message plus a support
+      reference.</li>
+  <li><strong>Never log the credential.</strong> Verify that your error handler doesn't dump full
+      request headers — this is the most common way tokens end up in log aggregators.</li>
+  <li><strong>Treat customer-submitted content as sensitive.</strong> Free-text fields will contain
+      personal data whatever your form says.</li>
+  <li><strong>Log enough to debug an integration:</strong> a correlation ID, the endpoint, the
+      status code, the duration. Not the payload.</li>
+</ul>
+
+<h2>5. Reading status back</h2>
+
+<p>Two-way integrations need updates to flow back. Two options, and the trade-off is real:</p>
+
+<table>
+<tr><th></th><th>Polling</th><th>Webhooks</th></tr>
+<tr><td><strong>How</strong></td><td>You ask the vendor periodically for current state.</td>
+    <td>The vendor calls an endpoint you expose when something changes.</td></tr>
+<tr><td><strong>Suits</strong></td><td>Low volume; simple; no public endpoint needed; fine when
+    minutes-fresh is acceptable.</td>
+    <td>High volume or near-real-time needs; avoids wasted calls.</td></tr>
+<tr><td><strong>Costs</strong></td><td>Wasted requests, rate-limit pressure, inherent staleness.</td>
+    <td>A public endpoint you must authenticate and secure; retry/duplicate handling; harder to
+    test locally.</td></tr>
+</table>
+
+<p>For a first integration under deadline, <strong>polling on user action</strong> — fetch fresh
+state when the customer opens the view — is usually the right call. It's less code, less
+infrastructure, and no inbound security surface. Optimise later, if the volume demands it.</p>
+
+<div class="callout gotcha">
+  <span class="label">If you do accept webhooks</span>
+  <p>An inbound webhook endpoint is <em>public internet</em>. Verify the signature the vendor
+  provides on every request, and treat delivery as at-least-once — the same event will arrive
+  twice eventually, so handling must be idempotent.</p>
+</div>
+
+<h2>6. Questions to ask your team before building</h2>
+
+<p>Asking these early reads as competence, not inexperience. Silence followed by the wrong thing
+is the failure mode to avoid.</p>
+
+<ul>
+  <li>Do we already have a pattern for outbound third-party API calls? Can I see one?</li>
+  <li>Where do server-side secrets live in this system, and who provisions them?</li>
+  <li>Which service account will this use, and what permissions does it have?</li>
+  <li>How do we authenticate the end user on the server, and how do I get their identity in a
+      handler?</li>
+  <li>What is our convention for handling and surfacing upstream failures?</li>
+  <li>Is there a staging/sandbox instance of the vendor system I can develop against?</li>
+  <li>Who reviews this, and what does our branch and PR process look like?</li>
+</ul>
+
+<h2>7. Pre-merge checklist</h2>
+
+<ul>
+  <li>☐ No secret in source, in the client bundle, or in Git history</li>
+  <li>☐ Credential attached server-side only</li>
+  <li>☐ Caller authenticated <em>and</em> authorised for the specific record</li>
+  <li>☐ Every identifier cross-checked against the session, not trusted from the body</li>
+  <li>☐ Input validated and narrowed before forwarding</li>
+  <li>☐ Timeout set on outbound calls</li>
+  <li>☐ Vendor errors logged server-side, generic message returned</li>
+  <li>☐ Headers/tokens excluded from logs</li>
+  <li>☐ Behaviour defined for vendor-down and rate-limited</li>
+  <li>☐ Duplicate-write path considered</li>
+</ul>
+
+<h2>Sources</h2>
+
+<ul>
+  <li><a href="https://owasp.org/API-Security/editions/2023/en/0x11-t10/">OWASP API Security Top 10 (2023)</a>
+      — the canonical list of what actually goes wrong with APIs.</li>
+  <li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html">OWASP — Secrets Management Cheat Sheet</a></li>
+  <li><a href="https://12factor.net/config">The Twelve-Factor App — Config</a>
+      — why configuration and secrets belong in the environment.</li>
+  <li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS">MDN — CORS</a>
+      — worth reading when the browser blocks a direct vendor call, which is also a hint you
+      should be going via your server.</li>
+</ul>
+
+<footer class="lesson-footer">
+  <p>Reference · Run Planner course ·
+  <a href="../lessons/0003-git-commits-and-branches.html">Lesson 3</a> ·
+  <a href="../MISSION.md">Mission</a></p>
+  <p><em>Generic by design. Contains nothing employer-specific.</em></p>
+</footer>
+
+</body>
+</html>

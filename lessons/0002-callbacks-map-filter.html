@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson 2 — Callbacks, .map() and .filter()</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<header class="masthead">
+  <p class="eyebrow">Lesson 02 · Run Planner · Foundations</p>
+  <h1>Callbacks, <code>.map()</code> and <code>.filter()</code></h1>
+  <p class="standfirst">One idea: a function can be an <em>argument</em>. Everything else in this
+  lesson follows from it. Still plain Node, no Vue, no build step. About 20 minutes.</p>
+</header>
+
+<div class="ask">
+  <strong>I'm your teacher for this.</strong> If a bit doesn't land, say so — including
+  "this is still pitched too high". That feedback is more useful to me than you struggling
+  through. Ask anything.
+</div>
+
+<h2>The win</h2>
+
+<p>By the end you'll be able to read a line like
+<code>days.filter(d =&gt; d.rain &lt; 20).map(d =&gt; d.date)</code> and say out loud what comes out
+of it, and how many items it has. That line shape is most of what a Run Planner does to a
+forecast.</p>
+
+<h2>Part 1: the one new idea</h2>
+
+<p>Last lesson you proved this yourself, and it's the whole foundation:</p>
+
+<pre><code>const double = n =&gt; n * 2
+
+console.log(double)      // [Function: double]  ← the function itself
+console.log(double(5))   // 10                  ← the result of calling it</code></pre>
+
+<p>The name <code>double</code> holds the function. The parentheses are what <em>calls</em> it.
+Those are two separate things, and once they're separate, a new move becomes possible:
+<strong>you can hand the uncalled function to something else and let it do the calling.</strong></p>
+
+<div class="callout">
+  <span class="label">/jargon — callback</span>
+  <p><strong>Callback:</strong> a function passed as an argument to another function, which that
+  other function calls at a time of its choosing.</p>
+  <p><strong>Handle:</strong> leaving a phone number. You don't decide when the call happens —
+  you hand over the means to make it, and the other party calls when they're ready.</p>
+  <p><strong>Where the analogy breaks:</strong> a phone number is a way to reach you; a callback
+  <em>is</em> the code itself. And <code>.map()</code> calls it immediately and repeatedly — once
+  per item — not later and once.</p>
+  <p><strong>In a sentence:</strong> "<code>.map()</code> takes a callback and runs it against
+  every element of the array."</p>
+  <p><strong>Common misuse:</strong> writing <code>days.map(double(n))</code> — that calls
+  <code>double</code> yourself and passes the <em>result</em>. You want
+  <code>days.map(double)</code>, where <code>double</code> has no parentheses
+  <em>of its own</em>.</p>
+</div>
+
+<div class="callout gotcha">
+  <span class="label">Whose parentheses are these?</span>
+  <p>There are two separate pairs in play, and only one of them is on screen:</p>
+  <pre><code>days.map(double)
+        ↑      ↑
+        these belong to map — they hold its argument list</code></pre>
+  <p><code>.map</code> is being called; its argument is <code>double</code>. The pair that would
+  call <code>double</code> is a <em>different</em> pair, and it's absent on purpose:</p>
+  <pre><code>days.map(double)      // argument is the function itself → map calls it, once per day
+days.map(double(n))   // argument is double's return value → map gets a number, and fails</code></pre>
+  <p>In the second line JavaScript evaluates <code>double(n)</code> <strong>before</strong>
+  <code>.map</code> ever starts. To tell whose parentheses you're looking at, read the name
+  immediately to the left of the <code>(</code>.</p>
+</div>
+
+<p>You have done this in Perl, though Perl hides the seam. In
+<code>map { $_ * 2 } @nums</code> the block is the callback — Perl just gives it special syntax
+instead of making it a value you could name.</p>
+
+<h2>Part 2: <code>.map()</code> — same length, different contents</h2>
+
+<p class="filename">Perl</p>
+<pre><code>my @nums    = (1, 2, 3);
+my @doubled = map { $_ * 2 } @nums;   # (2, 4, 6)</code></pre>
+
+<p class="filename">JavaScript</p>
+<pre><code>const nums    = [1, 2, 3]
+const doubled = nums.map(n =&gt; n * 2)   // [2, 4, 6]</code></pre>
+
+<p>Three differences worth naming, because they're the ones that trip people up:</p>
+
+<ul>
+  <li><code>.map()</code> is a <em>method on the array</em> — it hangs off the array with a dot,
+      rather than taking the list as an argument.</li>
+  <li>The callback has a real parameter name (<code>n</code>) instead of Perl's implicit
+      <code>$_</code>. You choose the name, and a good one is worth a comment.</li>
+  <li>It <strong>returns a new array</strong>. <code>nums</code> is untouched — exactly as you
+      described it back to me last session.</li>
+</ul>
+
+<p>The defining property: <strong>the output array always has the same length as the input.</strong>
+One in, one out, every time. If you find yourself wanting to <em>skip</em> some, you don't want
+<code>.map()</code>.</p>
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map">MDN — Array.prototype.map()</a></p>
+
+<h2>Part 3: <code>.filter()</code> — same contents, fewer of them</h2>
+
+<p>Perl's <code>grep</code>, respelled:</p>
+
+<p class="filename">Perl</p>
+<pre><code>my @warm = grep { $_ &gt; 15 } @temps;</code></pre>
+
+<p class="filename">JavaScript</p>
+<pre><code>const temps = [9, 18, 22, 12]
+const warm  = temps.filter(t =&gt; t &gt; 15)   // [18, 22]</code></pre>
+
+<p>Same callback idea, different contract. <code>.filter()</code>'s callback is asked a
+<strong>yes/no question</strong> about each element: return something truthy to keep it, falsy to
+drop it. The elements that survive come through <em>unchanged</em>.</p>
+
+<div class="callout gotcha">
+  <span class="label">The distinction to hold on to</span>
+  <p><code>.map()</code> — <strong>same length, new values.</strong> The callback returns a
+  replacement.</p>
+  <p><code>.filter()</code> — <strong>same values, new length.</strong> The callback returns
+  a verdict.</p>
+  <p>Mixing them up is the single most common mistake with these two. If your callback returns
+  <code>true</code>/<code>false</code> to <code>.map()</code>, you get an array of booleans and no
+  error message.</p>
+</div>
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter">MDN — Array.prototype.filter()</a></p>
+
+<h2>Part 4: chaining</h2>
+
+<p>Because both return an array, you can hang the next call straight off the result:</p>
+
+<pre><code>const temps = [9, 18, 22, 12]
+
+temps.filter(t =&gt; t &gt; 15).map(t =&gt; `${t}°C — go`)   // ['18°C — go', '22°C — go']</code></pre>
+
+<p>Read it strictly left to right: start with four numbers, keep two, turn those two into two
+strings. Order matters — filtering first means <code>.map()</code> does less work and, more
+importantly, never sees the values you rejected.</p>
+
+<h2>Check yourself</h2>
+
+<div class="quiz" data-answer="1"
+     data-explain="map always returns one output element per input element — the length is fixed by the input.">
+  <p class="quiz-q">Given a 7-element array, how long is the array <code>.map()</code> returns?</p>
+  <button class="quiz-choice">between zero and seven</button>
+  <button class="quiz-choice">exactly seven elements long</button>
+  <button class="quiz-choice">depends on the callback</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="quiz" data-answer="2"
+     data-explain="filter treats the callback's return value as keep-or-drop, so it needs a true/false verdict.">
+  <p class="quiz-q">What should a callback passed to <code>.filter()</code> return?</p>
+  <button class="quiz-choice">a replacement element value</button>
+  <button class="quiz-choice">the count of matching items</button>
+  <button class="quiz-choice">a true or false verdict</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="quiz" data-answer="0"
+     data-explain="map needs the function itself so it can call it per element; parentheses would call it once, now, and pass the result.">
+  <p class="quiz-q">Why is <code>nums.map(double)</code> right and <code>nums.map(double())</code> wrong?</p>
+  <button class="quiz-choice">map does the calling itself</button>
+  <button class="quiz-choice">map cannot accept named functions</button>
+  <button class="quiz-choice">map requires an arrow function</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<h3>Now read some code and judge it</h3>
+
+<p>This is the skill that pays off at work, so it gets its own question. Someone hands you this,
+claiming it "gives the dates of the good running days":</p>
+
+<pre><code>const goodDays = days.map(d =&gt; d.rain &lt; 20)</code></pre>
+
+<div class="quiz" data-answer="2"
+     data-explain="The callback returns a boolean, and map keeps every element — so you get [false, true, true, ...], one per day, with the dates nowhere in sight.">
+  <p class="quiz-q">What is actually in <code>goodDays</code>?</p>
+  <button class="quiz-choice">the dates of dry days</button>
+  <button class="quiz-choice">the day objects, rain under twenty</button>
+  <button class="quiz-choice">one true or false per day</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="task">
+  <h3>Your turn — 15 minutes, in a scratch file</h3>
+  <p>Create <code>scratch/02-lists.js</code> and run it with
+  <code>node scratch/02-lists.js</code>. Start by pasting this sample forecast — it's shaped like
+  what Open-Meteo will eventually give us, once we've reshaped it:</p>
+  <pre><code>const days = [
+  { date: '2026-07-25', tempMax: 31, rain: 5 },
+  { date: '2026-07-26', tempMax: 19, rain: 60 },
+  { date: '2026-07-27', tempMax: 22, rain: 10 },
+  { date: '2026-07-28', tempMax: 17, rain: 0 },
+  { date: '2026-07-29', tempMax: 28, rain: 45 }
+]</code></pre>
+  <p>Reach for <code>d.rain</code> and <code>d.tempMax</code> to get at the fields — dot notation,
+  like Perl's <code>$d-&gt;{rain}</code>.</p>
+  <ol>
+    <li>Use <code>.map()</code> to log an array of just the dates. Check the length is five.</li>
+    <li>Use <code>.filter()</code> to keep the days with <code>rain</code> under 20. Log it and
+        confirm you got whole day objects back, not just dates.</li>
+    <li>Chain them: good days → an array of sentences like
+        <code>"2026-07-27: 22°C, 10% rain"</code>, built with a template literal.</li>
+    <li>Log <code>days.length</code> at the very end to prove nothing was mutated.</li>
+    <li><strong>Break it on purpose:</strong> swap the two — <code>.map()</code> the condition and
+        <code>.filter()</code> the sentence — and look at what you get. Predict the output before
+        you run it, then check whether you were right.</li>
+  </ol>
+  <p>Declare all of these with <code>const</code>. Nothing here is ever reassigned, and
+  <code>let</code> tells a future reader — including you — that it might be.</p>
+</div>
+
+<h2>Read this</h2>
+
+<p><strong>Primary source:</strong>
+<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Indexed_collections#array_methods">MDN — Indexed collections: Array methods</a>.
+Skim the list of methods; you'll meet <code>.find()</code>, <code>.some()</code> and
+<code>.reduce()</code> later, and they all take the same kind of callback.</p>
+
+<h2>Next</h2>
+
+<p>Lesson 3 is <strong>destructuring</strong> — pulling values out of arrays and objects by shape.
+It's the one construct in this course you've genuinely already written: Perl's
+<code>my ($x, $y) = @_;</code> is destructuring, and JavaScript spells it almost identically. It
+makes the callbacks you just wrote considerably shorter.</p>
+
+<footer class="lesson-footer">
+  <p>Lesson 2 of the Run Planner course ·
+  <a href="0001-functions-arrows-strings.html">← Lesson 1</a> ·
+  <a href="../reference/open-meteo.html">Open-Meteo reference</a> ·
+  <a href="../MISSION.md">Mission</a> · <a href="../NOTES.md">Lesson plan</a></p>
+  <p><em>Questions are the point. Ask me anything about this lesson in the session.</em></p>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

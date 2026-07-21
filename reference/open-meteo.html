@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reference — Open-Meteo API</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<header class="masthead">
+  <p class="eyebrow">Reference · Run Planner</p>
+  <h1>Open-Meteo API</h1>
+  <p class="standfirst">Endpoints, parameters and response shapes. Verified against live
+  responses on 21 July 2026.</p>
+</header>
+
+<p>Two separate APIs, two different hosts. Neither needs an API key for non-commercial use.
+Both send permissive CORS headers, so the browser can call them directly.</p>
+
+<h2>Geocoding — name to coordinates</h2>
+
+<pre><code>https://geocoding-api.open-meteo.com/v1/search</code></pre>
+
+<table>
+  <thead><tr><th>Param</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><code>name</code></td><td>Required. 2 chars = exact match only; 3+ = fuzzy match.</td></tr>
+    <tr><td><code>count</code></td><td>Default 10, max 100.</td></tr>
+    <tr><td><code>language</code></td><td>Default <code>en</code>.</td></tr>
+    <tr><td><code>countryCode</code></td><td>ISO-3166-1 alpha-2 filter, e.g. <code>US</code>.</td></tr>
+  </tbody>
+</table>
+
+<p class="filename">GET /v1/search?name=Boulder&amp;count=2</p>
+<pre><code>{
+  "results": [
+    {
+      "id": 5574991,
+      "name": "Boulder",
+      "latitude": 40.01499,
+      "longitude": -105.27055,
+      "elevation": 1624.0,
+      "timezone": "America/Denver",
+      "country": "United States",
+      "country_code": "US",
+      "admin1": "Colorado",      // state / region
+      "admin2": "Boulder",       // county
+      "population": 106803
+    }
+    // ... second result: Boulder, Montana
+  ],
+  "generationtime_ms": 0.45
+}</code></pre>
+
+<div class="callout gotcha">
+  <span class="label">Gotcha</span>
+  <p>When nothing matches, the response is <code>{"generationtime_ms": 0.69}</code> — the
+  <code>results</code> key is <strong>absent entirely</strong>. It is not an empty array and not
+  <code>null</code>. Same for queries shorter than 2 characters. Type it as optional:
+  <code>results?: GeocodingResult[]</code>.</p>
+</div>
+
+<p><strong>Fields worth knowing:</strong> <code>admin1</code> is the state or region and
+<code>admin2</code> the county — both are <em>optional</em>, absent for many places. You need
+<code>admin1</code> + <code>country</code> to tell Boulder, Colorado from Boulder, Montana.</p>
+
+<h2>Forecast — coordinates to weather</h2>
+
+<pre><code>https://api.open-meteo.com/v1/forecast</code></pre>
+
+<table>
+  <thead><tr><th>Param</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><code>latitude</code>, <code>longitude</code></td><td>Required. WGS84.</td></tr>
+    <tr><td><code>daily</code></td><td>Comma-separated variable list (below).</td></tr>
+    <tr><td><code>timezone</code></td><td>Use <code>auto</code> to resolve from coordinates.</td></tr>
+    <tr><td><code>forecast_days</code></td><td>Default 7.</td></tr>
+  </tbody>
+</table>
+
+<p><strong>Useful daily variables:</strong> <code>temperature_2m_max</code>,
+<code>temperature_2m_min</code>, <code>apparent_temperature_max</code>,
+<code>precipitation_sum</code>, <code>precipitation_probability_max</code>,
+<code>wind_speed_10m_max</code>, <code>wind_gusts_10m_max</code>, <code>uv_index_max</code>,
+<code>sunrise</code>, <code>sunset</code>, <code>weather_code</code>.</p>
+
+<p class="filename">GET /v1/forecast?latitude=40.01&amp;longitude=-105.27&amp;daily=temperature_2m_max,precipitation_probability_max,wind_speed_10m_max&amp;timezone=auto&amp;forecast_days=3</p>
+<pre><code>{
+  "timezone": "America/Denver",
+  "elevation": 1635.0,
+  "daily_units": {
+    "time": "iso8601",
+    "temperature_2m_max": "degC",
+    "precipitation_probability_max": "%",
+    "wind_speed_10m_max": "km/h"
+  },
+  "daily": {
+    "time":                          ["2026-07-21", "2026-07-22", "2026-07-23"],
+    "temperature_2m_max":            [35.0,  34.7,  32.8],
+    "precipitation_probability_max": [13,    30,    94  ],
+    "wind_speed_10m_max":            [21.8,  24.3,  21.4]
+  }
+}</code></pre>
+
+<div class="callout gotcha">
+  <span class="label">The columnar problem</span>
+  <p><code>daily</code> is <strong>columnar</strong> — parallel arrays, one per variable, aligned
+  by index. Day 0 is <code>time[0]</code> + <code>temperature_2m_max[0]</code> and so on. There is
+  no per-day object. Turning this into <code>DailyForecast[]</code> is the job of the transform
+  layer in Lesson 9.</p>
+</div>
+
+<p>Units are <em>not</em> inside <code>daily</code> — they live in the sibling
+<code>daily_units</code> object. Don't hardcode the degree symbol: pass
+<code>temperature_unit=fahrenheit</code> if you want imperial, and read the label from
+<code>daily_units</code>.</p>
+
+<h2>Sanity-check from the terminal</h2>
+
+<p>Before writing any code against an endpoint, call it raw. This is the fastest way to learn a
+new API and it settles arguments about response shape instantly.</p>
+
+<pre><code>curl "https://geocoding-api.open-meteo.com/v1/search?name=Boulder&amp;count=2"</code></pre>
+
+<h2>Source</h2>
+
+<ul>
+  <li><a href="https://open-meteo.com/en/docs/geocoding-api">Open-Meteo Geocoding API docs</a></li>
+  <li><a href="https://open-meteo.com/en/docs">Open-Meteo Forecast API docs</a></li>
+</ul>
+
+<footer class="lesson-footer">
+  <p>Reference · <a href="../lessons/0007-your-first-typed-fetch.html">Lesson 7: Your First Typed Fetch</a></p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson 3 — Git: Commits and Branches</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<header class="masthead">
+  <p class="eyebrow">Lesson 03 · Run Planner · Track A — work blocker</p>
+  <h1>Git: Commits and Branches</h1>
+  <p class="standfirst">One idea: Git stores <em>snapshots you chose to take</em>. Branches,
+  pull requests and everything else follow from that. Practised on Run Planner, which has zero
+  commits and no remote — nothing here can break anything. About 25 minutes.</p>
+</header>
+
+<div class="ask">
+  <strong>I'm your teacher for this.</strong> Git is the topic where people nod along and stay
+  quietly lost for years, because the vocabulary is genuinely bad. If a word doesn't land, stop
+  and ask. That's not falling behind — that's the lesson working.
+</div>
+
+<h2>Why this one first</h2>
+
+<p>You have work on your laptop that isn't committed, in a repo whose conventions you don't know
+yet, with ten days on the clock. Until you can commit and branch confidently, every hour of work
+you do is stored in exactly one place and mixed in with every other change you've made. This
+lesson is the floor you need before the JSM integration, not a detour around it.</p>
+
+<h2>The one new idea</h2>
+
+<p>Git is not a backup system, and it is not a sync system. <strong>It is a sequence of snapshots
+that you deliberately took, each with a note saying why.</strong></p>
+
+<p>That word <em>deliberately</em> is the whole thing. Dropbox saves your file when you save your
+file. Git saves nothing until you say "this, now, is a state worth remembering." The cost is one
+extra step; the payoff is a history of meaningful moments rather than a pile of autosaves.</p>
+
+<div class="callout">
+  <span class="label">/jargon — commit</span>
+  <p><strong>Commit:</strong> a permanent, named snapshot of the whole project at one moment, plus
+  a message explaining the change and a link to the snapshot before it.</p>
+  <p><strong>Handle:</strong> a save point in a game. You choose when to drop one, you can return
+  to it later, and the ones you didn't take don't exist.</p>
+  <p><strong>Where the analogy breaks:</strong> returning to a game save wipes what came after. Git
+  keeps everything — going back to an old commit doesn't destroy the newer ones. And a commit is
+  the entire project, not just the file you were editing.</p>
+  <p><strong>In a sentence:</strong> "I committed the form validation separately so it can be
+  reviewed on its own."</p>
+  <p><strong>Common misuse:</strong> treating a commit as "saving my work at the end of the day."
+  A commit should be <em>one coherent change</em>. Ten unrelated edits in one commit is a commit
+  nobody can review, revert, or understand later.</p>
+</div>
+
+<h2>The three places a file can be</h2>
+
+<p>This is the part that confuses everyone, and it's worth five minutes because every Git command
+you'll ever run moves files between these three:</p>
+
+<pre><code>working directory  →  staging area  →  repository
+(your edits)          (chosen for       (committed
+                       the next          history)
+                       commit)</code></pre>
+
+<p>Perl has no equivalent, so there's nothing to lean on here — it's just new.</p>
+
+<div class="callout">
+  <span class="label">/jargon — staging area</span>
+  <p><strong>Staging area</strong> (also called the <em>index</em>): a holding space where you
+  assemble exactly the changes that will go into your next commit.</p>
+  <p><strong>Handle:</strong> the counter at a checkout. Your basket is everything you've picked
+  up; the counter is what you're actually paying for this trip. You can leave things in the
+  basket.</p>
+  <p><strong>Where the analogy breaks:</strong> staging copies a change rather than moving it —
+  the file stays in your working directory too. And you stage a <em>version</em> of a file: edit
+  it again after staging, and the newer edit isn't staged.</p>
+  <p><strong>In a sentence:</strong> "I staged just the CSS changes and left the debug logging
+  out of the commit."</p>
+  <p><strong>Common misuse:</strong> assuming <code>git commit</code> commits everything you've
+  changed. It commits what you <em>staged</em>. This is why people are baffled when a file they
+  edited isn't in the commit.</p>
+</div>
+
+<p>Why does staging exist at all? Because real work is messy. You set out to fix a bug, and along
+the way you also renamed a variable and left three <code>console.log</code>s in. Staging lets you
+commit the fix by itself and deal with the rest separately — so the history says what happened
+instead of when you stopped for lunch.</p>
+
+<h2>The commands</h2>
+
+<pre><code>git status                  # what's changed, what's staged — run this constantly
+git add &lt;file&gt;              # stage one file
+git add .                   # stage everything changed, from here down
+git commit -m "message"     # snapshot what's staged
+git log --oneline           # the history, one commit per line</code></pre>
+
+<div class="callout gotcha">
+  <span class="label">Run <code>git status</code> until it's a reflex</span>
+  <p>It is the only command that answers "where am I and what have I done?" and it is
+  <strong>read-only</strong> — it can never break anything. Experienced engineers run it dozens
+  of times an hour. If you adopt one habit from this lesson, make it this one.</p>
+</div>
+
+<h3>What a commit message is for</h3>
+
+<p>The message is read by a future person deciding whether your commit is the one that broke
+something. Write for that reader.</p>
+
+<pre><code>git commit -m "stuff"                                  # useless
+git commit -m "fix"                                    # useless
+git commit -m "Add pace calculation to forecast list"  # useful</code></pre>
+
+<p>The convention is the <strong>imperative mood</strong> — "Add", "Fix", "Remove", not "Added"
+or "Adding". The reason is that the message completes the sentence <em>"Applying this commit
+will…"</em>. It'll look odd for a week and then be invisible.</p>
+
+<h2>Branches</h2>
+
+<p>Everything so far was one line of history. A branch lets you have more than one.</p>
+
+<div class="callout">
+  <span class="label">/jargon — branch</span>
+  <p><strong>Branch:</strong> a movable name pointing at one commit, marking one line of
+  development. Committing on a branch moves the name forward.</p>
+  <p><strong>Handle:</strong> a bookmark in a choose-your-own-adventure book. Several bookmarks,
+  one book, each marking where a different storyline got to.</p>
+  <p><strong>Where the analogy breaks:</strong> a bookmark is passive; a branch name follows you
+  automatically as you commit. And branches can be merged back into one storyline, which books
+  can't do.</p>
+  <p><strong>In a sentence:</strong> "I built the ticket form on a branch so main stayed
+  deployable."</p>
+  <p><strong>Common misuse:</strong> thinking a branch is a copy of the folder. It isn't — it's a
+  pointer. That's why branching is instant even on a huge repo.</p>
+</div>
+
+<pre><code>git branch                        # list branches; * marks where you are
+git switch -c feature-ticket-form # create a branch and move onto it
+git switch main                   # move back
+</code></pre>
+
+<p><strong>Why professionals never commit to <code>main</code> directly:</strong> <code>main</code>
+is the version everyone agrees is good — often the version that gets deployed. Work in progress on
+<code>main</code> means everyone else inherits your half-finished feature. Work on a branch is
+invisible to everyone until you offer it.</p>
+
+<p>This matters for you specifically: <strong>check what branch you're on before you touch your
+work repo again.</strong> If you've been building the front end directly on <code>main</code>,
+that's worth fixing now, while it's small. Ask me and I'll walk you through moving it.</p>
+
+<p><a href="https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell">Pro Git — Branches in a Nutshell</a></p>
+
+<h2>Check yourself</h2>
+
+<div class="quiz" data-answer="1"
+     data-explain="commit snapshots the staging area, so an edited-but-unstaged file is simply left out — silently.">
+  <p class="quiz-q">You edit two files, <code>git add</code> one, then commit. What's in the commit?</p>
+  <button class="quiz-choice">both of the edited files</button>
+  <button class="quiz-choice">only the added file's changes</button>
+  <button class="quiz-choice">neither, until you push</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="quiz" data-answer="2"
+     data-explain="A branch is a movable pointer to a commit, which is why creating one is instant regardless of project size.">
+  <p class="quiz-q">What is a Git branch, physically?</p>
+  <button class="quiz-choice">a copy of every file</button>
+  <button class="quiz-choice">a folder of saved changes</button>
+  <button class="quiz-choice">a name pointing at one commit</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="quiz" data-answer="0"
+     data-explain="git status only reports state. It never modifies your files, your staging area, or your history.">
+  <p class="quiz-q">Which command can never damage anything?</p>
+  <button class="quiz-choice">git status, which only reports</button>
+  <button class="quiz-choice">git add, which only stages</button>
+  <button class="quiz-choice">git commit, which only saves</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="task">
+  <h3>Your turn — Run Planner has zero commits. Fix that.</h3>
+  <p>Everything below is on <em>your</em> repo with no remote. Nothing can reach anyone else.</p>
+  <ol>
+    <li>Run <code>git status</code> and read it properly. Every file is "untracked" — Git has
+        never been told to care about them.</li>
+    <li>Open <code>.gitignore</code> and confirm <code>node_modules</code> is listed. Then explain
+        to me why that folder must never be committed. (This one bites people in real repos.)</li>
+    <li>Stage and commit the project scaffolding on its own — <code>package.json</code>,
+        <code>vite.config.ts</code>, the <code>tsconfig</code> files, <code>.gitignore</code>,
+        <code>index.html</code>, <code>src/</code>, <code>public/</code>. One commit, imperative
+        message.</li>
+    <li>Now a <strong>second, separate</strong> commit for the course material —
+        <code>MISSION.md</code>, <code>NOTES.md</code>, <code>lessons/</code>, <code>assets/</code>,
+        <code>reference/</code>, <code>learning-records/</code>, <code>RESOURCES.md</code>,
+        <code>scratch/</code>. Two commits, because these are two unrelated things.</li>
+    <li><code>git log --oneline</code>. Two lines. That's your history.</li>
+    <li>Make a branch: <code>git switch -c practice-branch</code>. Add a line to
+        <code>scratch/02-lists.js</code>, commit it, then <code>git switch main</code> and look at
+        the file. <strong>Predict what you'll see before you look.</strong></li>
+    <li><code>git log --oneline</code> on <code>main</code>. Is your third commit there? Why not?</li>
+  </ol>
+  <p>Step 6 is the one that makes branches click. Write your prediction down first.</p>
+</div>
+
+<h2>Read this</h2>
+
+<p><strong>Primary source:</strong>
+<a href="https://git-scm.com/book/en/v2/Git-Basics-Recording-Changes-to-the-Repository">Pro Git, chapter 2.2 — Recording Changes to the Repository</a>.
+Free, written by the Git maintainers, and the section on the staging area is the clearest
+explanation in existence. Read 2.2 only.</p>
+
+<h2>Next</h2>
+
+<p>Lesson 4 is the other half of the workflow — <strong>remotes, pushing, and pull requests</strong>:
+getting your branch onto GitHub and offering it for review. That's the part your work repo runs on,
+and it's what you'll need before you write a line of the JSM integration.</p>
+
+<p>Alongside it, read
+<a href="../reference/api-integration-security.html">API Integration Security &amp; Architecture</a> —
+the generic checklist you asked for, safe to take to work.</p>
+
+<footer class="lesson-footer">
+  <p>Lesson 3 of the Run Planner course ·
+  <a href="0002-callbacks-map-filter.html">← Lesson 2</a> ·
+  <a href="../reference/api-integration-security.html">API security reference</a> ·
+  <a href="../MISSION.md">Mission</a> · <a href="../NOTES.md">Lesson plan</a></p>
+  <p><em>Questions are the point. Ask me anything about this lesson in the session.</em></p>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson 1 — Functions, Arrows and Strings</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<header class="masthead">
+  <p class="eyebrow">Lesson 01 · Run Planner · Foundations</p>
+  <h1>Functions, Arrows and Strings</h1>
+  <p class="standfirst">Two pieces of JavaScript syntax, both of which are new spellings of
+  things you already write in Perl. No Vue, no tooling, no build step. About 20 minutes.</p>
+</header>
+
+<div class="ask">
+  <strong>I'm your teacher for this.</strong> If a bit doesn't land, say so — including
+  "this is still pitched too high". That feedback is more useful to me than you struggling
+  through. Ask anything.
+</div>
+
+<h2>The win</h2>
+
+<p>By the end you'll be able to read <code>(n) =&gt; n * 2</code> without stopping, and know when
+JavaScript needs backticks instead of quotes. These two show up in nearly every line of the code
+you'll write later.</p>
+
+<h2>Part 1: Functions</h2>
+
+<p>Start from what you know. Here's a named function in both languages:</p>
+
+<p class="filename">Perl</p>
+<pre><code>sub double {
+    my ($n) = @_;
+    return $n * 2;
+}
+
+print double(5);   # 10</code></pre>
+
+<p class="filename">JavaScript</p>
+<pre><code>function double(n) {
+  return n * 2
+}
+
+console.log(double(5))   // 10</code></pre>
+
+<p>Same idea. The differences are cosmetic: parameters are named in the signature instead of
+unpacked from <code>@_</code>, no sigils on variables, and semicolons are optional in JavaScript
+(most modern codebases omit them).</p>
+
+<h3>Anonymous functions — you already use these</h3>
+
+<p>In Perl you can store a function in a variable — a <em>coderef</em>:</p>
+
+<p class="filename">Perl</p>
+<pre><code>my $double = sub {
+    my ($n) = @_;
+    return $n * 2;
+};
+
+print $double->(5);   # 10</code></pre>
+
+<p>JavaScript can do exactly this, and the older syntax looks almost identical:</p>
+
+<pre><code>const double = function (n) {
+  return n * 2
+}
+
+console.log(double(5))   // 10</code></pre>
+
+<p>Note there's no <code>-&gt;</code> needed to call it — just <code>double(5)</code>.</p>
+
+<h3>The arrow function is shorthand for that</h3>
+
+<p><strong>An arrow function is an anonymous function with shorter syntax.</strong> That is the
+entire idea. It is Perl's <code>sub { ... }</code> with the word <code>function</code> removed and
+a <code>=&gt;</code> inserted:</p>
+
+<pre><code>const double = function (n) { return n * 2 }   // anonymous function
+const double = (n) =&gt; { return n * 2 }         // same thing, arrow syntax</code></pre>
+
+<p>Read <code>=&gt;</code> out loud as <strong>"goes to"</strong>: <em>n goes to n times 2</em>.
+Parameters on the left, body on the right.</p>
+
+<h3>The short form</h3>
+
+<p>When the body is just a single expression being returned, you can drop the braces
+<em>and</em> the word <code>return</code>:</p>
+
+<pre><code>const double = (n) =&gt; { return n * 2 }   // long form
+const double = (n) =&gt; n * 2              // short form — identical behaviour</code></pre>
+
+<div class="callout gotcha">
+  <span class="label">The one that catches people</span>
+  <p>Braces mean "here comes a block of statements, and I'll <code>return</code> explicitly".
+  No braces means "this single expression <em>is</em> the return value".</p>
+  <p>So <code>(n) =&gt; { n * 2 }</code> — braces but no <code>return</code> — is a function that
+  computes <code>n * 2</code>, throws it away, and returns nothing. It's a common typo and it
+  fails silently.</p>
+</div>
+
+<p>Two more shorthand rules you'll see in real code:</p>
+
+<pre><code>n =&gt; n * 2           // single parameter: parentheses optional
+() =&gt; 'hello'        // no parameters: empty parentheses required</code></pre>
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions">MDN — Arrow function expressions</a></p>
+
+<h2>Part 2: Template literals</h2>
+
+<p>You had this almost exactly right. In Perl, double quotes interpolate:</p>
+
+<p class="filename">Perl</p>
+<pre><code>my $name = "Michelle";
+print "Hello, $name";      # Hello, Michelle</code></pre>
+
+<p>JavaScript needs <strong>backticks</strong> — the key above Tab — and wraps the variable in
+<code>${ }</code>:</p>
+
+<p class="filename">JavaScript</p>
+<pre><code>const name = 'Michelle'
+console.log(`Hello, ${name}`)      // Hello, Michelle</code></pre>
+
+<p>Your <code>${sample}</code> guess was correct. The piece to add is that it only works inside
+backticks.</p>
+
+<div class="callout gotcha">
+  <span class="label">Perl habit that will bite you</span>
+  <p>Ordinary quotes in JavaScript <strong>never</strong> interpolate. Both of these print the
+  literal text rather than the value:</p>
+  <pre><code>console.log("Hello, ${name}")   // Hello, ${name}
+console.log('Hello, ${name}')   // Hello, ${name}</code></pre>
+  <p>There is no JavaScript equivalent of the single/double quote distinction you know from Perl —
+  <code>'</code> and <code>"</code> behave identically. Interpolation is a backtick thing.</p>
+</div>
+
+<h3>What backticks buy you over Perl</h3>
+
+<p><code>${ }</code> takes any <em>expression</em>, not just a variable name — arithmetic, a
+function call, anything that produces a value:</p>
+
+<pre><code>const miles = 6.2
+console.log(`That's ${(miles * 1.609).toFixed(1)} km`)   // That's 10.0 km
+console.log(`Doubled: ${double(21)}`)                     // Doubled: 42</code></pre>
+
+<p>They also span multiple lines without any escaping:</p>
+
+<pre><code>const report = `Distance: ${miles} miles
+Weather: clear`</code></pre>
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals">MDN — Template literals</a></p>
+
+<h2>Check yourself</h2>
+
+<div class="quiz" data-answer="1"
+     data-explain="Braces mean a statement block, so an explicit return is required. Without one the function returns undefined.">
+  <p class="quiz-q">What does <code>(n) =&gt; { n * 2 }</code> return when called with 5?</p>
+  <button class="quiz-choice">the number ten</button>
+  <button class="quiz-choice">nothing at all</button>
+  <button class="quiz-choice">a syntax error</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="quiz" data-answer="2"
+     data-explain="Interpolation only happens inside backticks. Single and double quotes behave identically in JS.">
+  <p class="quiz-q">Which quote character makes <code>${name}</code> interpolate?</p>
+  <button class="quiz-choice">the single quote</button>
+  <button class="quiz-choice">the double quote</button>
+  <button class="quiz-choice">the backtick mark</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="quiz" data-answer="0"
+     data-explain="An arrow function is an anonymous function with shorter syntax — Perl's coderef, respelled.">
+  <p class="quiz-q">A JavaScript arrow function is closest to which Perl construct?</p>
+  <button class="quiz-choice">an anonymous sub</button>
+  <button class="quiz-choice">a package method</button>
+  <button class="quiz-choice">a hash of values</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="task">
+  <h3>Your turn — 10 minutes, in a scratch file</h3>
+  <p>You have Node installed (npm came with it), so you can run plain JavaScript from the
+  terminal — no build step, no browser.</p>
+  <ol>
+    <li>Make a folder <code>scratch/</code> in the project and create
+        <code>scratch/01-functions.js</code>.</li>
+    <li>Write <code>double</code> three ways: as a <code>function</code> declaration, as an arrow
+        with braces and <code>return</code>, and as a short-form arrow. Log all three results to
+        prove they match.</li>
+    <li>Write <code>const paceLabel = ...</code> as an arrow function taking <code>minutes</code>
+        and <code>miles</code>, returning a sentence via a template literal — something like
+        <code>"6.2 miles at 9.7 min/mile"</code>. Do the division <em>inside</em> the
+        <code>${ }</code>.</li>
+    <li>Deliberately break one: write an arrow with braces but no <code>return</code>, log it, and
+        see <code>undefined</code> with your own eyes. Then fix it.</li>
+    <li>Run it: <code>node scratch/01-functions.js</code></li>
+  </ol>
+</div>
+
+<div class="callout">
+  <span class="label">Tip</span>
+  <p>If you'd rather experiment line by line, type <code>node</code> on its own for an
+  interactive prompt — like <code>perl -de1</code>, but friendlier. <code>.exit</code> quits.</p>
+</div>
+
+<h2>Read this</h2>
+
+<p><strong>Primary source:</strong>
+<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Functions">MDN — Functions guide</a>.
+Read as far as "Arrow functions" and stop. MDN is the reference that working JS developers
+actually use; getting comfortable navigating it is worth as much as this lesson.</p>
+
+<h2>Next</h2>
+
+<p>Lesson 2 is lists — and it's mostly good news. Perl's <code>map</code> and <code>grep</code>
+become JavaScript's <code>.map()</code> and <code>.filter()</code>, and they work almost the same
+way. We'll also name a thing you've written a thousand times: <code>my ($x, $y) = @_;</code> is
+called <em>destructuring</em>, and JavaScript has it too.</p>
+
+<footer class="lesson-footer">
+  <p>Lesson 1 of the Run Planner course · <a href="../MISSION.md">Mission</a> ·
+  <a href="../NOTES.md">Lesson plan</a></p>
+  <p><em>Questions are the point. Ask me anything about this lesson in the session.</em></p>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

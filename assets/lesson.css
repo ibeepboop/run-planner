@@ -1,0 +1,264 @@
+/* Shared stylesheet for all Run Planner lessons and reference docs.
+   Tufte-inspired: generous margins, serif prose, restrained colour. */
+
+:root {
+  --ink: #111;
+  --ink-soft: #555;
+  --rule: #d8d4cc;
+  --paper: #fffdf9;
+  --accent: #1a5e63;
+  --accent-soft: #e8f0f0;
+  --warn: #8a4b08;
+  --warn-soft: #fbf1e4;
+  --code-bg: #f4f2ed;
+  --ok: #1e6b3a;
+  --bad: #99231d;
+  --measure: 40rem;
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 16px; }
+
+body {
+  margin: 0 auto;
+  padding: 4rem 2rem 6rem;
+  max-width: var(--measure);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Masthead ---- */
+
+.masthead {
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 0.75rem;
+  margin-bottom: 2.5rem;
+}
+
+.eyebrow {
+  font-family: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 0.4rem;
+}
+
+h1 {
+  font-size: 2rem;
+  line-height: 1.15;
+  margin: 0 0 0.5rem;
+  font-weight: 400;
+}
+
+.standfirst {
+  font-style: italic;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+h2 {
+  font-size: 1.3rem;
+  font-weight: 400;
+  margin: 2.75rem 0 0.75rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 1.75rem 0 0.5rem;
+}
+
+p { margin: 0 0 1rem; }
+
+a { color: var(--accent); text-underline-offset: 2px; }
+
+/* ---- Code ---- */
+
+code {
+  font-family: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, monospace;
+  font-size: 0.85em;
+  background: var(--code-bg);
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+}
+
+pre {
+  background: var(--code-bg);
+  border-left: 3px solid var(--accent);
+  padding: 1rem 1.15rem;
+  overflow-x: auto;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin: 0 0 1.25rem;
+}
+
+pre code { background: none; padding: 0; font-size: inherit; }
+
+.filename {
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 0 0 0.3rem;
+}
+
+/* ---- Callouts ---- */
+
+.callout {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  padding: 0.9rem 1.15rem;
+  margin: 0 0 1.25rem;
+  font-size: 0.95rem;
+}
+
+.callout.gotcha {
+  border-left-color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.callout p:last-child { margin-bottom: 0; }
+
+.callout .label {
+  display: block;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+  color: var(--warn);
+}
+
+.callout:not(.gotcha) .label { color: var(--accent); }
+
+/* ---- Task box ---- */
+
+.task {
+  border: 2px solid var(--ink);
+  padding: 1.25rem 1.5rem;
+  margin: 2rem 0;
+}
+
+.task h3 { margin-top: 0; }
+.task ol { margin: 0; padding-left: 1.25rem; }
+.task li { margin-bottom: 0.5rem; }
+.task li:last-child { margin-bottom: 0; }
+
+/* ---- Quiz (see quiz.js) ---- */
+
+.quiz {
+  border: 1px solid var(--rule);
+  background: #fff;
+  padding: 1.15rem 1.35rem;
+  margin: 0 0 1.25rem;
+}
+
+.quiz-q { font-weight: 700; margin-bottom: 0.85rem; }
+
+.quiz-choice {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 0.82rem;
+  background: var(--code-bg);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0.55rem 0.8rem;
+  margin-bottom: 0.45rem;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.quiz-choice:hover:not(:disabled) { border-color: var(--accent); }
+.quiz-choice:disabled { cursor: default; opacity: 0.65; }
+
+.quiz-choice.correct {
+  background: #e6f4ea;
+  border-color: var(--ok);
+  color: var(--ok);
+  opacity: 1;
+  font-weight: 700;
+}
+
+.quiz-choice.incorrect {
+  background: #fbeae9;
+  border-color: var(--bad);
+  color: var(--bad);
+  opacity: 1;
+}
+
+.quiz-feedback {
+  margin: 0.75rem 0 0;
+  font-size: 0.9rem;
+  font-style: italic;
+  color: var(--ink-soft);
+  min-height: 1.2em;
+}
+
+/* ---- Footer nav ---- */
+
+.lesson-footer {
+  margin-top: 3.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.ask {
+  background: var(--accent-soft);
+  border-radius: 4px;
+  padding: 0.9rem 1.15rem;
+  font-size: 0.92rem;
+  margin-bottom: 1.5rem;
+}
+
+.ask strong { color: var(--accent); }
+
+/* ---- Reference tables ---- */
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.88rem;
+  margin: 0 0 1.25rem;
+}
+
+th, td {
+  text-align: left;
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+
+th {
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* ---- Print ---- */
+
+@media print {
+  body { padding: 0; max-width: none; font-size: 11pt; background: #fff; }
+  .quiz, .ask, .lesson-footer { break-inside: avoid; }
+  .quiz-choice { display: block; }
+  a { color: var(--ink); text-decoration: none; }
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.75em;
+    color: var(--ink-soft);
+  }
+}

@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson 1 — Your First Typed Fetch</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<header class="masthead">
+  <p class="eyebrow">Lesson 05 · Run Planner</p>
+  <h1>Your First Typed Fetch</h1>
+  <p class="standfirst">Call the Open-Meteo geocoding API when a component mounts, type what
+  comes back honestly, and render it. About 25 minutes.</p>
+</header>
+
+<div class="ask">
+  <strong>I'm your teacher for this.</strong> If any part of this is unclear, or you want to go
+  deeper on something, just ask in the session — that's what I'm here for. Don't grind on a
+  confusing bit alone.
+</div>
+
+<h2>The win</h2>
+
+<p>By the end you'll have a Vue component that, on load, searches for "Boulder" and renders both
+Boulders — Colorado and Montana — with enough detail to tell them apart. Hardcoded query, no
+input box yet. One thing at a time.</p>
+
+<h2>Knowledge: three ideas</h2>
+
+<h3>1. <code>ref()</code> is a box that Vue watches</h3>
+
+<p>In Vue, a plain variable is invisible to the template — reassign it and nothing re-renders.
+<code>ref()</code> wraps a value in a reactive box (a "reference" Vue tracks). When the contents
+change, anything displaying it updates.</p>
+
+<pre><code>import { ref } from 'vue'
+
+const count = ref(0)   // Ref&lt;number&gt;, inferred
+count.value++          // in script: use .value
+</code></pre>
+
+<p>The rule that trips everyone up: <strong>in <code>&lt;script&gt;</code> you write
+<code>.value</code>; in <code>&lt;template&gt;</code> you don't.</strong> Vue unwraps refs
+automatically in templates. So <code>count.value++</code> in script, but
+<code>{{ count }}</code> in the template.</p>
+
+<p>When a ref starts empty but will hold something later, TypeScript can't infer the type — give
+it an explicit type parameter:</p>
+
+<pre><code>const places = ref&lt;GeocodingResult[]&gt;([])
+const error  = ref&lt;string | null&gt;(null)
+</code></pre>
+
+<p><a href="https://vuejs.org/guide/essentials/reactivity-fundamentals.html">Vue docs — Reactivity Fundamentals</a></p>
+
+<h3>2. <code>onMounted()</code> is "the component is now on screen"</h3>
+
+<p>A <em>lifecycle hook</em> — a function Vue calls at a specific moment in a component's life.
+<code>onMounted</code> fires once, after the component is inserted into the page. It's where
+first-load data fetching goes.</p>
+
+<pre><code>import { onMounted } from 'vue'
+
+onMounted(async () =&gt; {
+  // fetch here
+})
+</code></pre>
+
+<div class="callout">
+  <span class="label">Why not just await at the top?</span>
+  <p>Top-level <code>await</code> in <code>&lt;script setup&gt;</code> works, but it turns your
+  component into an <em>async component</em> that needs a <code>&lt;Suspense&gt;</code> wrapper to
+  render. That's a bigger concept than you need today. <code>onMounted</code> keeps the component
+  ordinary.</p>
+</div>
+
+<h3>3. <code>fetch</code> only rejects on network failure</h3>
+
+<p>This surprises people coming from other HTTP libraries. A 404 or 500 is a <em>successful</em>
+fetch as far as the promise is concerned — the server answered. The promise only rejects if the
+request never completed (DNS failure, offline, CORS block).</p>
+
+<p>So you must check <code>response.ok</code> yourself:</p>
+
+<pre><code>const response = await fetch(url)
+if (!response.ok) {
+  throw new Error(`Geocoding failed: ${response.status}`)
+}
+const data = await response.json()   // note: typed as `any`
+</code></pre>
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch">MDN — Using the Fetch API</a></p>
+
+<h2>The honest type</h2>
+
+<p>Here's the real response for a search with no matches, taken live from the API:</p>
+
+<pre><code>{"generationtime_ms": 0.69}</code></pre>
+
+<p>No <code>results</code> key at all. Not <code>[]</code>, not <code>null</code> — absent. If you
+type it as <code>results: GeocodingResult[]</code> then <code>data.results.map(...)</code>
+compiles perfectly and crashes at runtime the first time someone searches for a typo.</p>
+
+<p>Type what the API <em>actually</em> returns:</p>
+
+<pre><code>interface GeocodingResult {
+  id: number
+  name: string
+  latitude: number
+  longitude: number
+  country?: string    // optional in the API
+  admin1?: string     // state/region — often absent
+}
+
+interface GeocodingResponse {
+  results?: GeocodingResult[]   // ← absent when nothing matches
+}
+</code></pre>
+
+<div class="callout gotcha">
+  <span class="label">The boundary rule</span>
+  <p><code>response.json()</code> returns <code>any</code>. TypeScript will let you assert it into
+  any shape you like and will never check you were right — the compiler has no idea what a server
+  sent. Types at an API boundary are a <em>claim</em>, not a guarantee. Which is exactly why the
+  claim should match reality, and why the optional <code>?</code> above matters so much.</p>
+</div>
+
+<h2>Check yourself</h2>
+
+<div class="quiz" data-answer="0"
+     data-explain="The key is absent entirely — so any type that promises an array will lie to you.">
+  <p class="quiz-q">When the geocoding API matches nothing, the response body contains:</p>
+  <button class="quiz-choice">no results key at all</button>
+  <button class="quiz-choice">an empty results array</button>
+  <button class="quiz-choice">a results key set null</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="quiz" data-answer="1"
+     data-explain="Templates auto-unwrap refs; script code does not. This asymmetry is deliberate.">
+  <p class="quiz-q">Where do you need to write <code>.value</code> to read a ref?</p>
+  <button class="quiz-choice">In template, not script</button>
+  <button class="quiz-choice">In script, not template</button>
+  <button class="quiz-choice">In script and template</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="quiz" data-answer="2"
+     data-explain="A 404 means the server replied, so the promise resolves. Only network-level failures reject.">
+  <p class="quiz-q">A <code>fetch</code> receiving a 404 response will:</p>
+  <button class="quiz-choice">reject with a network error</button>
+  <button class="quiz-choice">reject with an http error</button>
+  <button class="quiz-choice">resolve with ok set false</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="task">
+  <h3>Your turn to build</h3>
+  <ol>
+    <li>Delete <code>src/components/HelloWorld.vue</code> and empty out
+        <code>src/App.vue</code>. Clear the scaffold noise.</li>
+    <li>Create <code>src/types.ts</code> with the two interfaces above.</li>
+    <li>Create <code>src/components/PlaceSearch.vue</code> using
+        <code>&lt;script setup lang="ts"&gt;</code>. It should hold two refs: one for the results
+        array, one for an error message that starts <code>null</code>.</li>
+    <li>In <code>onMounted</code>, fetch
+        <code>https://geocoding-api.open-meteo.com/v1/search?name=Boulder&amp;count=5&amp;language=en&amp;format=json</code>.
+        Check <code>response.ok</code>. Wrap it in <code>try/catch</code> and put any error message
+        into your error ref.</li>
+    <li>Render the results with <code>v-for</code> — show <code>name</code>, <code>admin1</code>
+        and <code>country</code> so the two Boulders are distinguishable. Remember
+        <code>:key="place.id"</code>.</li>
+    <li>Handle the empty case in the template: if there are no results, say so rather than
+        rendering nothing.</li>
+    <li>Use <code>PlaceSearch</code> in <code>App.vue</code>, then run <code>npm run dev</code>.</li>
+  </ol>
+</div>
+
+<div class="callout">
+  <span class="label">Stuck?</span>
+  <p>Two things worth trying before asking: open the network tab and confirm the request actually
+  goes out, and <code>console.log</code> the parsed JSON before you touch <code>.results</code>.
+  Most first-fetch bugs are one of those two places. Then ask me — bring the error text.</p>
+</div>
+
+<h2>Read this</h2>
+
+<p><strong>Primary source:</strong>
+<a href="https://vuejs.org/guide/typescript/composition-api.html">Vue 3 Docs — TypeScript with
+Composition API</a>. Read the sections "Typing Component Props" and "Typing <code>ref()</code>".
+It's short, and it's the authoritative answer to almost every typing question you'll hit in the
+next few lessons.</p>
+
+<h2>Next</h2>
+
+<p>Lesson 8 turns the hardcoded "Boulder" into a real search box — which immediately creates two
+new problems: firing a request per keystroke, and older responses arriving after newer ones and
+overwriting them. That's where debouncing and <code>AbortController</code> come in.</p>
+
+<footer class="lesson-footer">
+  <p>Lesson 7 of the Run Planner course ·
+  <a href="../reference/open-meteo.html">Reference: Open-Meteo API</a> ·
+  <a href="../MISSION.md">Mission</a></p>
+  <p><em>Questions are the point. Ask me anything about this lesson in the session.</em></p>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+</body>
+</html>
