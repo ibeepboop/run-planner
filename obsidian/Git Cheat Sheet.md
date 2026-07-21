@@ -2,7 +2,7 @@
 
 > [!info] Living document
 > This is **mine to grow** — like [[Glossary]], not a course port. There is no HTML original.
-> Add commands, gotchas and corrections as I learn them. Last touched: 2026-07-21 (Lesson 3).
+> Add commands, gotchas and corrections as I learn them. Last touched: 2026-07-21 (Lesson 5).
 
 ## The one-line mental model
 
@@ -75,6 +75,43 @@ A **remote** is a full copy of the repo on another machine (e.g. GitHub). The fi
 > 2. **No password auth.** GitHub killed Git password auth in 2021. On Windows, Git Credential
 >    Manager pops a browser sign-in on first push. Alternatives: Personal Access Token (paste as the
 >    password), SSH key, or `gh auth login`. ([GitHub auth docs](https://docs.github.com/en/authentication))
+
+## Pull requests (the team ship-it loop)
+
+A **pull request** is a proposal, opened on GitHub, to merge one branch into another. The merge
+runs **on GitHub**, not my laptop — so the order is forced: push the branch up, merge it up there,
+then pull the result home. Review (human, Copilot, or CI) is what the PR *enables*; whether it's
+*required* is a team branch-protection policy, not part of every PR.
+
+```
+push branch up  →  open PR  →  review the diff  →  merge (button, on GitHub)  →  git pull down
+```
+
+| Step | Command / click |
+| --- | --- |
+| Push the unmerged branch | `git push -u origin practice-branch` (`-u` per branch, same as `main`) |
+| Open the PR | GitHub banner → **Compare & pull request**. `base = main` ← `compare = my-branch` |
+| Read my own change | **Files changed** tab = the diff; **Commits** tab = my commits |
+| Merge it | **Squash and merge** button → Confirm (see button choices below) |
+| Bring it home | `git switch main` → `git pull` → `git log --oneline` shows the new commit |
+
+> [!tip] Which merge button
+> **Squash and merge** — collapse all branch commits into *one* new commit on `main`. Team default;
+> tidy history. **Merge commit** — keep every commit + a merge commit; full trail. **Rebase and
+> merge** — replay commits, straight history, no merge commit (advanced). Match my team's house rule.
+
+> [!warning] base vs compare
+> **base** = where commits are going (`main`); **compare** = where they come from (my branch). Backwards
+> = proposing to merge `main` into my branch. GitHub usually guesses right; read it before clicking.
+
+> [!note] Deleting a branch after a squash-merge — `-d` works on a *pushed* branch
+> Squash writes a **new** commit on `main` (different identity), so my branch isn't merged *into main*.
+> But `git branch -d practice-branch` still **succeeds**, because `-d` checks the **upstream**
+> (`origin/practice-branch`, which holds the commits) *first*, and only falls back to `main`/HEAD if
+> there's no upstream. It prints "merged to `origin/practice-branch`, but not yet merged to HEAD" — read
+> that line; it names the copy that vouched for the commits. `-D` (force) is only needed if that remote
+> copy is *also* gone (deleted on GitHub **and** `git fetch --prune` run). *I caught this myself — the
+> lesson wrongly claimed `-d` would refuse.*
 
 ## Local vs remote — the axis I keep conflating
 

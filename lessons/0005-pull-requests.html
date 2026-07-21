@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson 5 — Pull Requests</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<header class="masthead">
+  <p class="eyebrow">Lesson 05 · Run Planner · Track A — work blocker</p>
+  <h1>Pull Requests: proposing a merge, GitHub's way</h1>
+  <p class="standfirst">One idea: a <em>pull request</em> is a proposal to merge one branch into
+  another — and unlike the merge you know, it happens <em>on GitHub</em>, after review, not on your
+  laptop. That single relocation is why you <em>push</em> before you merge, and it puts your "push
+  it up" instinct exactly where it belongs. About 25 minutes.</p>
+</header>
+
+<div class="ask">
+  <strong>I'm your teacher for this.</strong> This is the exact workflow your team runs on, and the
+  last pure-Git thing standing between you and the JSM integration. It has more moving parts than a
+  commit, so we go one observation at a time — you'll <em>watch</em> the merge move from your laptop
+  to GitHub and back. If any screen doesn't look like what I describe, stop and tell me before you
+  click. Reading a PR screen is a skill too.
+</div>
+
+<h2>Why this one now</h2>
+
+<p>In Lesson 3 you merged branches yourself, locally, with <code>git merge</code> — and last lesson
+you <em>declined</em> to fake a merge so we could do the real thing here. This is the real thing.
+No one on a team merges their own branch straight into <code>main</code> on their laptop. They
+<strong>propose</strong> the merge, someone reviews it, and GitHub performs it. That proposal is a
+pull request. Every change you ship at work — including the JSM feature — will travel through one.</p>
+
+<h2>The one new idea</h2>
+
+<p>You already know how to merge: <code>git merge</code> takes one branch's commits and folds them
+into the branch you're on, <em>on your machine</em>. A pull request keeps the same goal — fold
+<code>practice-branch</code> into <code>main</code> — but changes <strong>where and when</strong> it
+happens:</p>
+
+<ul>
+  <li><strong>Where:</strong> on GitHub's copy, not your laptop. The merge button lives on the
+  website.</li>
+  <li><strong>When:</strong> after the change has been <em>looked at</em> — a diff to read, a place
+  to comment, a check that has to pass.</li>
+</ul>
+
+<p>Here's the consequence that resolves the thing that kept tripping you up. Because the merge runs
+<em>on GitHub</em>, GitHub has to be able to see your branch's commits first. So the order is forced:
+<strong>push the branch up, then merge it up there.</strong> Your "push it up" instinct was never
+wrong — it was just early. Push is how the branch <em>gets</em> to the place where the merge can
+happen.</p>
+
+<div class="callout">
+  <span class="label">/jargon — pull request (PR)</span>
+  <p><strong>Pull request:</strong> a request, opened on GitHub, to merge the commits on one branch
+  (here <code>practice-branch</code>) into another (here <code>main</code>). It bundles the diff, the
+  commits, a discussion thread, and a merge button into one page.</p>
+  <p><strong>Handle:</strong> a merge request with a cover note — "please pull these commits of mine
+  into <code>main</code>" — that a teammate reads and approves before it goes in.</p>
+  <p><strong>Where the analogy breaks:</strong> the name is backwards from what it feels like. You're
+  <em>offering</em> your commits, but it's called a <em>pull</em> request because you're asking the
+  project to <em>pull</em> them in. GitHub named it from the receiver's side, not yours.</p>
+  <p><strong>In a sentence:</strong> "I pushed the branch and opened a PR so Sam could review it
+  before it hit <code>main</code>."</p>
+  <p><strong>Common misuse:</strong> thinking the PR <em>is</em> the merge. It isn't — it's the
+  <em>proposal</em>. The branch isn't merged until someone clicks the button. An open PR can sit,
+  get comments, get more commits pushed to it, or be closed without ever merging.</p>
+</div>
+
+<h2>The picture — watch the merge move</h2>
+
+<p>Compare Lesson 3's local merge with the PR merge. Same destination, different building it happens
+in.</p>
+
+<pre><code>LESSON 3 — you merged locally
+  ┌─────────────────────────────┐
+  │ your laptop                 │
+  │  practice-branch ─► main    │   git merge, on your machine
+  └─────────────────────────────┘
+
+LESSON 5 — GitHub merges, you push then pull
+  your laptop                         GitHub
+  ┌─────────────┐   push branch  ─►   ┌───────────────────────┐
+  │ practice-   │                     │ origin/practice-branch │
+  │ branch      │                     │        │  open PR       │
+  │             │                     │        ▼  review        │
+  │ main  ◄─────┼──── git pull ───────┤ main ◄─ MERGE (button)  │
+  └─────────────┘                     └───────────────────────┘</code></pre>
+
+<p>Read the bottom diagram top to bottom: the branch goes <em>up</em>, the merge happens <em>up
+there</em>, and the merged <code>main</code> only reaches your laptop when you <code>git pull</code>
+it back down. Three deliberate moves, and the merge is the middle one — on GitHub.</p>
+
+<h2>The commands and clicks</h2>
+
+<p>Half of this is terminal, half is the website. I've marked which is which.</p>
+
+<pre><code># TERMINAL — push the branch up, still unmerged.
+git switch practice-branch           # make sure you're on it
+git push -u origin practice-branch   # send it; -u links it to origin, same as main last lesson
+
+# WEBSITE — github.com shows a yellow banner: "practice-branch had recent pushes …
+#   Compare &amp; pull request".  Click it.
+#   base: main   ◄──   compare: practice-branch     (merge INTO main, FROM your branch)
+#   Give it a title, then "Create pull request".
+
+# WEBSITE — read your own PR. The "Files changed" tab is the diff; "Commits" shows your two.
+#   This is the review view your teammates will use. Read it as if it were someone else's.
+
+# WEBSITE — click "Squash and merge" (see the box below on which button), then "Confirm".
+#   Optionally click "Delete branch" — safe, it only deletes the copy on GitHub.
+
+# TERMINAL — bring the merged main back down.
+git switch main
+git pull                             # main now has the merged change; -u from Lesson 4 means no args
+git log --oneline                    # see the new commit that the merge created on main</code></pre>
+
+<p>Notice the <code>-u</code> again: you set it once <em>per branch</em>. You did it for
+<code>main</code> last lesson; <code>practice-branch</code> is a different branch, so it needs its
+own. After this, a bare <code>git push</code> from that branch knows where to go.</p>
+
+<h3>Which merge button? — GitHub offers three</h3>
+
+<p>When you go to merge, GitHub gives you a dropdown. This is a real decision, so here's which suits
+what, not just a "recommended" sticker:</p>
+
+<table>
+  <thead><tr><th>Button</th><th>What it does</th><th>When it suits you</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Squash and merge</td>
+      <td>Collapses <em>all</em> the branch's commits into <strong>one</strong> new commit on
+      <code>main</code>.</td>
+      <td>The default on most teams. Your two "work in progress" commits become one clean entry in
+      <code>main</code>'s history. Use this today.</td>
+    </tr>
+    <tr>
+      <td>Merge commit</td>
+      <td>Keeps every branch commit and adds one extra "merge commit" tying them together.</td>
+      <td>When each commit is meaningful on its own and you want the full trail preserved.</td>
+    </tr>
+    <tr>
+      <td>Rebase and merge</td>
+      <td>Replays your commits onto <code>main</code> individually, no merge commit.</td>
+      <td>When you want every commit kept but a dead-straight history. The advanced option — leave it
+      for now.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>We use <strong>squash</strong> today because your two practice commits ("update a line", "add
+prediction") aren't history anyone needs — one tidy commit on <code>main</code> is the honest record.
+Your team likely has a house rule; ask which they use, and match it.</p>
+
+<div class="callout gotcha">
+  <span class="label">Squash makes a brand-new commit — but your <em>pushed</em> branch is still safe to delete</span>
+  <p>Squash doesn't move your two commits onto <code>main</code>; it <em>writes a new one</em> that
+  contains the same changes but has a different identity. So <code>practice-branch</code> is
+  <strong>not</strong> merged into <code>main</code> — and you might expect
+  <code>git branch -d practice-branch</code> to refuse.</p>
+  <p>It won't, and the reason is pure local-vs-remote. <code>-d</code> checks
+  <em>"is this branch fully merged into its <strong>upstream</strong>?"</em> first, and only falls
+  back to checking <code>main</code>/HEAD if there's no upstream. Because you pushed with
+  <code>-u</code>, the upstream <code>origin/practice-branch</code> holds the same commits — so Git
+  sees them as safe and deletes the branch, printing a warning that it's merged to
+  <code>origin/practice-branch</code> but not to HEAD. Read that warning; it's telling you exactly
+  which copy vouched for the commits.</p>
+  <p>You'd only need the force flag <code>git branch -D practice-branch</code> if <em>no</em> copy
+  survived — e.g. you deleted the branch on GitHub <em>and</em> ran <code>git fetch --prune</code>,
+  so the remote-tracking ref is gone too. Then <code>-d</code> falls back to <code>main</code>, can't
+  find the squashed commits under their old identity, and refuses. (Either way, confirm the change is
+  on <code>main</code> with <code>git log</code> before deleting anything.)</p>
+</div>
+
+<div class="callout gotcha">
+  <span class="label">"base" and "compare" point the way the merge flows</span>
+  <p>On the PR screen, <strong>base</strong> is where the commits are going (<code>main</code>) and
+  <strong>compare</strong> is where they're coming from (<code>practice-branch</code>). Get these
+  backwards and you'll propose merging <code>main</code> into your branch — the opposite of what you
+  want. GitHub usually guesses right, but read it before you click, the same way you read a push
+  error.</p>
+</div>
+
+<h2>Check yourself</h2>
+
+<div class="quiz" data-answer="0"
+     data-explain="The merge button lives on GitHub and runs on GitHub's copy — that's why the branch has to be pushed up first, so GitHub can see the commits to merge.">
+  <p class="quiz-q">When you click "Merge" on a pull request, where does the merge run?</p>
+  <button class="quiz-choice">on GitHub's remote copy</button>
+  <button class="quiz-choice">on your local machine</button>
+  <button class="quiz-choice">inside your staging area</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="quiz" data-answer="0"
+     data-explain="The merge happened on GitHub, so the updated main lives there first; git pull is how it reaches your laptop. Nothing arrives automatically.">
+  <p class="quiz-q">The PR is merged on GitHub. How does the result reach your laptop?</p>
+  <button class="quiz-choice">run git pull locally</button>
+  <button class="quiz-choice">push the branch again</button>
+  <button class="quiz-choice">merge it once more</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="quiz" data-answer="0"
+     data-explain="GitHub can only merge commits it can see. An unpushed branch is invisible to it, so pushing is what makes the PR possible — push does not itself merge or review anything.">
+  <p class="quiz-q">Why push <code>practice-branch</code> <em>before</em> opening the PR?</p>
+  <button class="quiz-choice">GitHub can't see unpushed commits</button>
+  <button class="quiz-choice">pushing performs the actual merge</button>
+  <button class="quiz-choice">pushing reviews the code first</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="task">
+  <h3>Your turn — ship <code>practice-branch</code> through a real PR</h3>
+  <p>You do every step. I'm on standby the instant a screen or a message looks off.</p>
+  <ol>
+    <li><code>git switch practice-branch</code>, then
+        <code>git push -u origin practice-branch</code>. Confirm it lands: GitHub should now show the
+        branch (it didn't last lesson — that absence <em>was</em> the Lesson 4 proof).</li>
+    <li>Open the pull request from the banner GitHub shows you. Check <strong>base = main</strong>,
+        <strong>compare = practice-branch</strong>. Title it something honest and create it.</li>
+    <li>Open the <strong>Files changed</strong> tab and read your own diff. Then <strong>Commits</strong>
+        — you should see your <strong>two</strong> commits. Tell me what the diff shows before you
+        merge; reading it is half the point.</li>
+    <li><strong>Squash and merge</strong> → Confirm. Watch the PR flip to a purple "Merged" state.</li>
+    <li>Back in the terminal: <code>git switch main</code>, then <code>git pull</code>. Run
+        <code>git log --oneline</code>. You should see <strong>one new commit</strong> on
+        <code>main</code> — the squash — carrying <code>practice-branch</code>'s changes. That commit
+        was born on GitHub and just travelled down to you.</li>
+    <li><em>Optional tidy-up:</em> run <code>git branch -d practice-branch</code>. It <strong>deletes
+        the branch</strong> and prints a warning that it was merged to
+        <code>origin/practice-branch</code> but not to HEAD — read that line, it names the copy that
+        made the commits safe (the squash gotcha above). You'd only need the force flag
+        <code>-D</code> if you'd also pruned that remote-tracking copy.</li>
+  </ol>
+  <p>The win: you ran your team's real ship-it loop end to end — pushed a branch, proposed a merge,
+  reviewed it, merged it on GitHub, and pulled the result home — and you chose every moment it moved.</p>
+</div>
+
+<p>Then <strong>play one term back to me in your own words</strong> — <em>pull request</em> — and it
+goes in your glossary. The question I most want you to answer: <em>why does the push have to come
+before the merge?</em> If that one clicks, the local-vs-remote picture is finally whole.</p>
+
+<h2>Read this</h2>
+
+<p><strong>Primary source:</strong>
+<a href="https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests">GitHub Docs — About pull requests</a>.
+A pull request is a GitHub feature, not part of core Git, so GitHub's own docs are the authority here
+(Pro Git covers plain <code>git merge</code>, which you already met in Lesson 3). For the merge-button
+choice specifically,
+<a href="https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/about-pull-request-merges">About pull request merges</a>
+lays out squash vs merge-commit vs rebase in full.</p>
+
+<h2>Next</h2>
+
+<p>That's the last pure-Git blocker cleared — you can now branch, push, propose, review, merge and
+pull the way your team does, which is everything the JSM work needs from Git. From here Track A turns
+to the integration itself: <strong>what an API call actually is</strong> — request, response, status
+codes, headers — then <code>fetch</code>/<code>async</code>/<code>await</code>, and why the JSM token
+has to live on a server and never in the browser. Run Planner is where we'll practise all of it
+safely first.</p>
+
+<footer class="lesson-footer">
+  <p>Lesson 5 of the Run Planner course ·
+  <a href="0004-remotes-and-push.html">← Lesson 4</a> ·
+  <a href="../obsidian/Git Cheat Sheet.md">Git cheat sheet</a> ·
+  <a href="../reference/api-integration-security.html">API security reference</a> ·
+  <a href="../MISSION.md">Mission</a> · <a href="../NOTES.md">Lesson plan</a></p>
+  <p><em>Questions are the point. Ask me anything about this lesson in the session.</em></p>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

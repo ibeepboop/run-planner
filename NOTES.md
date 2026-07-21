@@ -58,51 +58,52 @@ wherever the choice exists.
 The exact lesson cadence (lecture-then-exam vs lecture-only vs review-only) was asked but never
 settled. Current format: short explainer, retrieval quiz, then a task she does herself.
 
-## RESUME HERE (last updated end of session 3, 21 July 2026 — cont.)
+## RESUME HERE (last updated end of session 4, 21 July 2026)
 
-**Done:** Lessons 1–**4** all complete with playbacks. Lesson 4 (remotes + push) closed this
-session — see [[learning-records/0008-lesson-4-complete]] (and 0007 for Lesson 3). `remote` and
-`push` now in `GLOSSARY.md` and the cheat sheet.
+**Done:** Lessons 1–**5** all complete with playbacks. Lesson 5 (pull requests) closed this
+session — see [[learning-records/0009-lesson-5-complete]]. `pull request` now in `GLOSSARY.md` and
+the cheat sheet (new "Pull requests" section). **The local-vs-remote conflation that ran through
+Lessons 3–5 is resolved** — she can state *why* push must precede the PR merge, unaided.
 
-**Repo state (verified live):** `main` (3 commits) is **pushed to GitHub** — remote `origin` exists,
-first push worked, Git Credential Manager handled auth on Windows. `practice-branch` (2 extra
-commits) is **still local and unmerged** — the Lesson 5 PR vehicle. `scratch/` is committed.
+**Repo state (verified live):** `main` (5 commits) is pushed to GitHub, including the squash-merge
+`219426d "…(#1)"`. PR #1 merged. `practice-branch` **deleted locally** (she did it). Note
+`remotes/origin/practice-branch` tracking ref may still linger until a `fetch --prune` — harmless.
 
-**Decisions still standing:** she declined a bare local merge (wants the real PR flow — respected);
-Conventional Commits is her team's convention (endorse; her `lesson:` prefix is a custom type).
+**Decisions standing:** Conventional Commits is her team's convention (her `lesson:` is a custom
+type, fine in this repo). She wanted the real PR flow, not a faked local merge — delivered.
 
-**Living artifact:** `obsidian/Git Cheat Sheet.md` now covers remotes/push + first-push traps. Keep
-growing it each Git lesson.
+**Living artifact:** `obsidian/Git Cheat Sheet.md` now covers the full PR loop + the `-d`/`-D`
+branch-cleanup nuance. Keep growing it.
 
-**Recurring pattern to keep exploiting:** the local-vs-remote (branch/merge vs push/pull)
-conflation keeps resurfacing and keeps getting resolved *by observation* — she pushed `main`, saw
-only 3 commits on GitHub, and that became the proof that push is per-branch. Lean on what she can
-*see*, not just definitions.
+**Recurring pattern that keeps paying off:** local-vs-remote resolved *by observation* a third time —
+her `git branch -d` succeeding (not `-D`) exposed that `-d` checks the **upstream** first, and that a
+remote-tracking branch is a real object Git reasons about. Lean on what she can *see*.
 
-**She catches my errors** — the Lesson 4 task said "five commits," she flagged that main has three.
-Fixed. This is the mission working; name it when it happens.
+**She catches my errors — again.** Lesson 5's gotcha wrongly claimed `-d` would refuse; she ran it,
+it succeeded, she flagged the mismatch. Fixed in the lesson, glossary, and cheat sheet. This is the
+mission's core outcome working; name it every time it happens.
 
-**Pick up with — Lesson 5: pull requests (NOT YET WRITTEN).** `git push -u origin practice-branch`
-(branch goes up unmerged) → open a PR on GitHub → review view → **squash-and-merge on GitHub** →
-`git pull` merged main back down. Spine: **Git's local `merge` vs GitHub's PR-button merge** (merge
-runs on GitHub, so push comes first — resolves her "push up" instinct for good). Last pure-Git
-blocker before the JSM integration. She writes/runs everything.
-2. **Answer her open question:** she asked for "a copy of the git-switch.html file" in
-   `obsidian/`. No such file exists. Two candidates, unresolved when the session ended: a *new*
-   `reference/git-essentials.html` consolidating this session (commit/staging/branch model,
-   command table, `switch` vs `checkout`, unstaging, the `.gitignore` categories), or a straight
-   Markdown port of `lessons/0003-*.html`. Recommend the new reference doc — the switch/checkout
-   and unstaging material exists **only in the transcript** and will be lost otherwise. Ask in
-   prose, briefly.
-3. **Lesson 4 — remotes, push, pull requests.** Hard blocker for work; she has never used GitHub
-   professionally. Needs a GitHub remote for run-planner to practise against.
-4. Then Track A continues: what an API call is → `fetch`/`async`/`await` → why the token is
-   server-side (the reference doc already covers the *what*; she needs the *how*).
+**Pick up with — Lesson 6: what an API call actually is (NOT YET WRITTEN).** Track A / JSM proper.
+Request, response, status codes, headers, auth — the vocabulary, before any `fetch`. Then Lesson 7
+`fetch`/`async`/`await` + error handling (note MDN: a 404 does *not* reject the promise), then why
+the JSM/NPS token must live server-side. Run Planner's Open-Meteo calls are the safe practice ground;
+`reference/api-integration-security.html` covers the *why* of server-side secrets — she needs the
+*how*. Held-back `0007-your-first-typed-fetch.html` (arc Lesson 8) sits downstream of these; do not
+renumber it yet (see Renumbering note).
 
-**Nag retired:** `const` used throughout Lesson 2 unprompted. Stop flagging unless it returns.
+**One-concept-per-lesson still holds** — API calls is a lot of surface; split request/response
+vocabulary from `fetch` mechanics if it feels heavy. When in doubt, split.
 
-**New, unverified:** she used a `chore:` prefix on both commits — Conventional Commits, picked up
-somewhere and not taught here. Ask whether her team uses it before endorsing or unpicking it.
+**Ordering decision (confirmed with her, end of session 4 — don't re-litigate):** she asked whether
+TypeScript is needed before APIs. Confirmed the work blocker is the **JSM integration itself**, not
+reading TS. So the road is: **API concept (L6) → async JS (the real deferred prerequisite — promises/
+`async`/`await`; was arc L4, skipped when Git jumped the queue) → TypeScript from the ground up →
+first *typed* fetch (`0007`)**. TS earns its place at the "type the response" step, not before —
+teaching it abstractly is the same "too technical" failure as the first Lesson 1 draft. Exception
+still stands: if reading typed `.ts` code becomes an active work blocker, pull a tight "reading TS
+annotations" lesson forward out of order.
+
+**Nag retired:** `const` used throughout unprompted since Lesson 2. Stop flagging unless it returns.
 
 **Working style, learned the hard way this session:** don't re-open files she already has open,
 and ask clarifying questions in **prose, not `AskUserQuestion`** — she interrupted both. She
