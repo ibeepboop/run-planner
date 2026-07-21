@@ -14,6 +14,11 @@
 - [Open-Meteo — Geocoding API docs](https://open-meteo.com/en/docs/geocoding-api)
   Place search: `name`, `count`, `language`, `countryCode`. Use for: turning a typed place name
   into latitude/longitude.
+- [MDN — An overview of HTTP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview)
+  Plain-language explanation of the request/response model and the anatomy of each message. Use
+  for: Lesson 6, the concept of an API call before any `fetch`. Highest-trust source for HTTP itself.
+- [MDN — HTTP response status codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status)
+  The full status-code reference. Use for: looking up any code — bookmark, don't memorise.
 - [MDN — Using the Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch)
   Definitive reference on `fetch`, response handling, and why a 404 does *not* reject the promise.
   Use for: error-handling design.

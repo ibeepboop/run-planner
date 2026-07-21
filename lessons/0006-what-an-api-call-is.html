@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson 6 — What an API Call Actually Is</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<header class="masthead">
+  <p class="eyebrow">Lesson 06 · Run Planner · Track A — work blocker</p>
+  <h1>What an API call actually is: two messages with a fixed shape</h1>
+  <p class="standfirst">One idea: an <em>API call</em> is a <strong>request</strong> message you
+  send and a <strong>response</strong> message you get back — and both have the same predictable
+  anatomy. Once you can name the parts, every API call you read (yours, a teammate's, or one the AI
+  wrote) becomes something you can inspect instead of trust. No code today — just the vocabulary
+  that everything else stands on. About 20 minutes.</p>
+</header>
+
+<div class="ask">
+  <strong>I'm your teacher for this.</strong> This is the first lesson of the JSM integration
+  proper, and I'm deliberately teaching the <em>concept</em> before any <code>fetch</code>. Your
+  real task — "customer fills our form → we call JSM → a ticket appears" — <em>is</em> one API call.
+  If you can name its parts, you can reason about it; if you can't, you're copying patterns and
+  hoping. We'll use a real, safe call you can run yourself to see every part with your own eyes. If
+  anything you see on screen doesn't match what I describe, stop and tell me — reading a real
+  response is the whole skill.
+</div>
+
+<h2>Why this one now</h2>
+
+<p>Your JSM feature comes down to a single sentence: <em>send a request to Atlassian asking it to
+create a ticket, and read the response to know whether it worked.</em> That's an API call. Before
+we touch the JavaScript that makes one (<code>fetch</code>, next lesson), you need the map of what
+an API call <strong>is</strong> — otherwise the JavaScript is just spells. The
+<a href="../reference/api-integration-security.html">API security reference</a> you already have
+tells you <em>why</em> the JSM token must live on a server; this lesson shows you <em>what</em> that
+token actually rides inside, and where.</p>
+
+<h2>The one new idea</h2>
+
+<p>An <strong>API call is a conversation of exactly two messages</strong>:</p>
+
+<ul>
+  <li>You send a <strong>request</strong> — "here is what I want."</li>
+  <li>The server sends back a <strong>response</strong> — "here is what happened."</li>
+</ul>
+
+<p>The trick that makes this learnable: <em>both messages have the same three-part shape.</em> Learn
+the shape once and you can read either side. Here is that shape, filled in with your real JSM task
+on the way out and its answer on the way back.</p>
+
+<pre><code>THE REQUEST  (what your server sends to JSM)
+┌───────────────────────────────────────────────────────────────┐
+│ POST /rest/servicedeskapi/request        ← METHOD + ENDPOINT   │  the "start line": verb + address
+│ Host: your-domain.atlassian.net                                │
+│ Authorization: Basic a1b2c3…            ← a HEADER (the token) │  headers: labels about the message
+│ Content-Type: application/json          ← a HEADER            │
+│                                                                │  ← blank line separates head from body
+│ { "serviceDeskId": "10",                 ← the BODY            │  body: the actual payload
+│   "summary": "Printer on floor 3 is down" }                    │
+└───────────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+THE RESPONSE  (what JSM sends back)
+┌───────────────────────────────────────────────────────────────┐
+│ 201 Created                              ← STATUS CODE         │  the "start line": did it work?
+│ Content-Type: application/json          ← a HEADER            │  headers: labels about the answer
+│                                                                │
+│ { "issueKey": "SD-42",                   ← the BODY            │  body: the data you asked for
+│   "issueId": "10001" }                                         │
+└───────────────────────────────────────────────────────────────┘</code></pre>
+
+<p>Same skeleton both ways: a <strong>start line</strong>, some <strong>headers</strong>, a blank
+line, then a <strong>body</strong>. The only difference is what the start line carries — the request
+opens with a <em>verb and an address</em>, the response opens with a <em>status code</em>.</p>
+
+<div class="callout">
+  <span class="label">/jargon — API call (an HTTP request &amp; its response)</span>
+  <p><strong>API call:</strong> one round trip over HTTP — a <em>request</em> message sent to a
+  specific address, and the <em>response</em> message that comes back. "HTTP" is just the agreed
+  format both messages are written in (the same one your browser uses to load a web page).</p>
+  <p><strong>Handle:</strong> a letter and its reply. You post a letter with an address on the
+  envelope, labels on the outside, and a note inside; you get back a letter with a
+  <em>result stamp</em>, its own labels, and its own note inside.</p>
+  <p><strong>Where the analogy breaks:</strong> a letter is one-way and slow; an API call is a single
+  synchronous round trip — you hold the line and the reply comes back on the same connection,
+  usually in milliseconds. There's no "reply address" because the reply comes straight back down the
+  wire you opened.</p>
+  <p><strong>In a sentence:</strong> "The JSM integration is one API call — we POST the ticket
+  details and read the <code>201</code> to confirm it was created."</p>
+  <p><strong>Common misuse:</strong> treating "the API returned something" as "it worked." The
+  response <em>always</em> comes back with a status code — including when it's telling you you got it
+  wrong. Getting a response and getting <em>success</em> are two different things (that's the next
+  section).</p>
+</div>
+
+<h2>The anatomy, term by term</h2>
+
+<p>These are the words you'll see in every API doc, every teammate's code, and every
+<code>fetch</code> the AI writes for you. You only have to <em>play one back</em> to me (the box
+above); the rest are here as a labelled map to point at, not a memory drill. They'll stick through
+use.</p>
+
+<table>
+  <thead><tr><th>Part</th><th>What it is</th><th>Everyday handle</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Method</strong><br>(verb)</td>
+      <td>What you're asking the server to <em>do</em>: <code>GET</code> (read),
+      <code>POST</code> (create), <code>PUT</code>/<code>PATCH</code> (update),
+      <code>DELETE</code> (remove).</td>
+      <td>The verb of the sentence. Creating a JSM ticket is a <code>POST</code>; reading a weather
+      forecast is a <code>GET</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>Endpoint</strong><br>(URL)</td>
+      <td>The specific address the request is sent to — one URL per operation the API offers.</td>
+      <td>The exact door you knock on. <code>/v1/search</code> is Open-Meteo's "find a place" door;
+      <code>/rest/servicedeskapi/request</code> is JSM's "raise a ticket" door.</td>
+    </tr>
+    <tr>
+      <td><strong>Headers</strong></td>
+      <td>Labels <em>about</em> the message — who you are (<code>Authorization</code>), what format
+      the body is in (<code>Content-Type</code>), what you'll accept back (<code>Accept</code>).</td>
+      <td>Writing on the envelope, not the letter inside. The token is a header — which is exactly
+      why the browser can read it, and why it can't live there.</td>
+    </tr>
+    <tr>
+      <td><strong>Body</strong></td>
+      <td>The actual payload. On a <code>POST</code>, the data you're sending up (the ticket
+      fields). On a response, the data you asked for (usually JSON).</td>
+      <td>The letter inside the envelope. <code>GET</code> requests usually have no body — you're
+      only asking, not sending.</td>
+    </tr>
+    <tr>
+      <td><strong>Status code</strong></td>
+      <td>A three-digit number opening the response that says how it went. This is the first thing
+      you read on the way back.</td>
+      <td>A result stamp. <code>201</code> = "made it," <code>404</code> = "no such thing,"
+      <code>401</code> = "who are you?"</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Status codes: the number you check first</h2>
+
+<p>The status code is grouped into families by its first digit. You don't memorise the list — you
+memorise the <em>five doorways</em>, then recognise the handful you actually meet.</p>
+
+<table>
+  <thead><tr><th>Family</th><th>Meaning</th><th>Ones you'll actually see</th></tr></thead>
+  <tbody>
+    <tr><td><code>2xx</code></td><td><strong>Success.</strong> It worked.</td>
+        <td><code>200 OK</code> (here's the data), <code>201 Created</code> (I made the thing).</td></tr>
+    <tr><td><code>3xx</code></td><td>Redirect — go look somewhere else.</td>
+        <td>Rare in API work; your tools follow these for you.</td></tr>
+    <tr><td><code>4xx</code></td><td><strong>You got it wrong.</strong> The request was bad.</td>
+        <td><code>400</code> (malformed), <code>401</code> (not authenticated),
+        <code>403</code> (not allowed), <code>404</code> (no such endpoint/record),
+        <code>429</code> (too many requests).</td></tr>
+    <tr><td><code>5xx</code></td><td><strong>The server got it wrong.</strong> Not your fault.</td>
+        <td><code>500</code> (it broke), <code>503</code> (it's down/overloaded).</td></tr>
+  </tbody>
+</table>
+
+<p>The dividing line worth burning in: <strong>4xx is your bug, 5xx is theirs.</strong> When the AI
+writes JSM code and something fails, that first digit tells you which side to look at — a
+<code>401</code> means fix your token; a <code>500</code> means retry or call Atlassian, not rewrite
+your request.</p>
+
+<div class="callout gotcha">
+  <span class="label">A <code>404</code> is a <em>successful</em> round trip</span>
+  <p>This is the one that trips everyone, and it sets up next lesson. If you ask for a URL that
+  doesn't exist and get <code>404 Not Found</code>, the <strong>HTTP request itself succeeded</strong>
+  — you reached the server, it understood you, and it answered. "Not found" <em>is</em> the answer.</p>
+  <p>Contrast that with the request never arriving at all (server down, no internet, wrong host) —
+  <em>that's</em> a failure, because there's no response at all. So there are two different
+  questions, and you must ask them in order: <strong>(1) did I get a response?</strong> then
+  <strong>(2) what status code was it?</strong> Next lesson you'll see <code>fetch</code> treat a
+  <code>404</code> as a perfectly successful call for exactly this reason — and it surprises almost
+  everyone until they've seen this box.</p>
+</div>
+
+<div class="callout gotcha">
+  <span class="label">A <code>200</code> can still be "empty" — check the body too</span>
+  <p>Status is necessary but not sufficient. Open-Meteo's geocoding endpoint answers a no-match
+  search — say <code>name=zzzzz</code> — with a cheerful <code>200 OK</code> whose body is just
+  <code>{"generationtime_ms":0.69}</code>: <strong>the <code>results</code> key is absent
+  entirely.</strong> The call succeeded; there's simply nothing in it. So "did it work?" is really
+  two checks — a good status code <em>and</em> a body that actually contains what you need. You'll
+  meet this exact response again when we type it.</p>
+</div>
+
+<h2>Where the auth token rides — and why that's the whole security story</h2>
+
+<p>Look back at the request diagram: the token is a <strong>header</strong>
+(<code>Authorization</code>). That single fact is the root of your entire
+<a href="../reference/api-integration-security.html">API security reference</a>. If your Vue app in
+the browser made the JSM call directly, the browser would have to <em>write that header itself</em>
+— which means the token would have to be in code the browser downloaded, where any user can open
+devtools and read it. The token isn't leaked by carelessness; it's leaked by <em>architecture</em>,
+the moment the request originates in the browser. That's why the request has to be built on your
+<strong>server</strong>, where the header is attached out of the user's sight. You'll build that
+server later (Lessons 13–14); for now, just hold the link: <em>token = a request header = a thing
+the browser can read = a thing the server must add instead.</em></p>
+
+<h2>Two real calls, side by side</h2>
+
+<p>Your practice ground is deliberately the <em>safe</em> one. Open-Meteo needs no token, so you can
+fire real requests at it all day and see every part of this lesson live — while it's the exact same
+<em>shape</em> as the JSM call you can't experiment on freely.</p>
+
+<pre><code>PRACTICE (safe — no token, you can run this yourself)
+  GET /v1/search?name=Boulder&amp;count=5      ← method GET, endpoint + query
+  Host: geocoding-api.open-meteo.com
+  (no Authorization header — public data)
+  (no body — a GET only asks)
+        ▼
+  200 OK
+  { "results": [ { "name": "Boulder", "admin1": "Colorado", … },
+                 { "name": "Boulder", "admin1": "Montana",  … } ] }
+
+WORK (the same shape, plus a token and a body)
+  POST /rest/servicedeskapi/request           ← method POST, endpoint
+  Host: your-domain.atlassian.net
+  Authorization: Basic …                       ← the header that must be added server-side
+  Content-Type: application/json
+  { "summary": "Printer down", … }             ← the body: what to create
+        ▼
+  201 Created
+  { "issueKey": "SD-42", … }</code></pre>
+
+<p>Read across: <code>GET</code> vs <code>POST</code>, no-token vs token-in-a-header, no-body vs
+body, <code>200</code> vs <code>201</code>. Different values, <em>identical anatomy.</em> When you
+can look at either and point to each part by name, you can read any API call in your codebase.</p>
+
+<h2>Check yourself</h2>
+
+<div class="quiz" data-answer="0"
+     data-explain="You reached the server and it answered — that's a completed HTTP round trip. '404 Not Found' is the answer, not a failure to connect. A failure is when NO response comes back at all.">
+  <p class="quiz-q">A <code>GET</code> to Open-Meteo comes back <code>404 Not Found</code>. Did the
+  HTTP request itself succeed?</p>
+  <button class="quiz-choice">yes — the server responded</button>
+  <button class="quiz-choice">no — nothing reached it</button>
+  <button class="quiz-choice">no — the request crashed</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="quiz" data-answer="0"
+     data-explain="The token travels as the Authorization header — a label on the outside of the request. Because it's part of the request the browser would build, a browser could read it; that's the entire reason the call must be made server-side.">
+  <p class="quiz-q">Where does the JSM auth token travel inside the request?</p>
+  <button class="quiz-choice">in a request header</button>
+  <button class="quiz-choice">in the request body</button>
+  <button class="quiz-choice">in the endpoint path</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="quiz" data-answer="0"
+     data-explain="The status code is the first thing on the response and says how it went — 201 Created means the ticket was made. The request body is what you sent up; the method is your verb. Neither reports the outcome.">
+  <p class="quiz-q">Which part of the exchange tells you the vendor actually <em>created</em> your
+  ticket?</p>
+  <button class="quiz-choice">the response status code</button>
+  <button class="quiz-choice">the outbound request body</button>
+  <button class="quiz-choice">the request method verb</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="task">
+  <h3>Your turn — make a real request and read every part of the response</h3>
+  <p>No app, no code file — you're going to fire a genuine API call and see this lesson's anatomy in
+  the wild. Two ways; do the terminal one, and the browser one if you want to see the request side
+  too.</p>
+  <ol>
+    <li><strong>Terminal (PowerShell).</strong> Run:
+      <br><code>curl.exe -i "https://geocoding-api.open-meteo.com/v1/search?name=Boulder&amp;count=5"</code>
+      <br>The <code>-i</code> flag says "include the response headers." Read the very first line —
+      that's your <strong>status code</strong> (expect <code>200</code>). Below it, the
+      <strong>headers</strong> (find <code>Content-Type: application/json</code>). Then a blank line,
+      then the <strong>body</strong> — the JSON. <em>(Use <code>curl.exe</code>, not
+      <code>curl</code> — in PowerShell bare <code>curl</code> is an alias for a different
+      command.)</em></li>
+    <li><strong>Now break it on purpose.</strong> Run the same command with
+      <code>name=zzzzz</code>. What status code comes back — and is the <code>results</code> key in
+      the body? Tell me what you see; this is the "<code>200</code> but empty" gotcha, live.</li>
+    <li><strong>Browser (optional, to see the request side).</strong> Open the Boulder URL in a
+      browser tab. Then open devtools (<kbd>F12</kbd>) → <strong>Network</strong> tab → reload.
+      Click the <code>search</code> request. You'll see the request <strong>method</strong>
+      (<code>GET</code>), the <strong>request headers</strong> your browser added, the response
+      <strong>status</strong>, and the response <strong>body</strong> — the whole two-message
+      exchange, itemised by the browser, using this lesson's exact words as its section labels.</li>
+  </ol>
+  <p>The win: you sent two real API calls, read a success and a "successful failure," and located
+  every part — method, endpoint, header, body, status code — in an actual response. That's the
+  reading skill the whole JSM task rests on.</p>
+</div>
+
+<p>Then <strong>play one thing back to me in your own words</strong>: <em>what is an API call?</em>
+Describe the two messages and, in each, where the important parts live — especially <em>which part
+you read first to know if it worked, and which part carries the token.</em> When that's solid it
+goes in your glossary, and we move to <code>fetch</code> — the JavaScript that actually sends one.</p>
+
+<h2>Read this</h2>
+
+<p><strong>Primary source:</strong>
+<a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview">MDN — An overview of
+HTTP</a>. The highest-trust plain-language explanation of the request/response model, the anatomy of
+each message, and what the parts are for — written by the people who document the web itself. Read
+the "Requests" and "Responses" sections; skim the rest. For the status codes specifically,
+<a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status">MDN — HTTP response
+status codes</a> is the full reference to keep bookmarked (you'll never memorise it — you'll look
+it up, which is correct).</p>
+
+<h2>Next</h2>
+
+<p>You now have the map. <strong>Lesson 7</strong> puts it in motion: <code>fetch</code>, the
+JavaScript that sends a request and hands you back the response — plus <code>async</code>/
+<code>await</code> (because a round trip takes <em>time</em>, and your code has to wait for it
+without freezing) and <code>try</code>/<code>catch</code> for when the request never arrives at all.
+The <code>404</code> gotcha from today is the hinge of that lesson: <code>fetch</code> only treats
+"no response" as an error — a <code>404</code> is, to it, a job well done. Open-Meteo stays our safe
+practice ground.</p>
+
+<footer class="lesson-footer">
+  <p>Lesson 6 of the Run Planner course ·
+  <a href="0005-pull-requests.html">← Lesson 5</a> ·
+  <a href="../reference/api-integration-security.html">API security reference</a> ·
+  <a href="../MISSION.md">Mission</a> · <a href="../NOTES.md">Lesson plan</a></p>
+  <p><em>Questions are the point. Ask me anything about this lesson in the session.</em></p>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

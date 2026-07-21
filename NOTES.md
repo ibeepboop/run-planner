@@ -58,7 +58,32 @@ wherever the choice exists.
 The exact lesson cadence (lecture-then-exam vs lecture-only vs review-only) was asked but never
 settled. Current format: short explainer, retrieval quiz, then a task she does herself.
 
-## RESUME HERE (last updated end of session 4, 21 July 2026)
+## RESUME HERE (last updated end of session 5, 21 July 2026)
+
+**Lesson 6 DONE.** `API call` played back strong + unaided, now in `GLOSSARY.md`. Full detail in
+[[learning-records/0010-lesson-6-complete]]. Highlights that matter for next session:
+
+- **She caught a real ambiguity in my own feedback** (request body vs response body — I wrote "body"
+  bare twice; GET has no *request* body but gets a full *response* body). Same "name the owner of a
+  shared term" slip as the `.map()` parentheses episode. Mission working, 3rd+ time — keep naming it.
+  Glossary anatomy-map now says "request body"/"response body" explicitly.
+- **Refinements she still needs reinforced:** `PUT`/`PATCH` (not "UPDATE") is the HTTP verb; a `GET`
+  sends no request body (inputs ride in the URL).
+- **Open thread:** the hands-on `curl.exe -i` task was **never reported back** (no first-line status,
+  no `zzzzz` empty-200 observation). Gotchas landed *as concepts* (playback + glossary) but not by her
+  own observation. **Cash this in at the top of L7** — have her actually run the `zzzzz` call and *see*
+  the `200` with absent `results`; it's the live hinge for `fetch`'s 404 behaviour.
+
+**Pick up with — Lesson 7: `fetch` / `async` / `await` / `try`/`catch` (NOT YET WRITTEN).** The JS
+that sends the request she just mapped; async JS (the real deferred prerequisite) arrives here,
+motivated by the round trip taking time. The **404-is-success** gotcha from L6 is the hinge — `fetch`
+only rejects on "no response," treats a 404 as a resolved promise (MDN: `Fetch_API/Using_Fetch`).
+Open-Meteo is the safe practice ground. One-concept-per-lesson still holds — if `fetch` + promises +
+`async`/`await` + error handling feels heavy, split the request-sending mechanics from error handling.
+Held-back `0007-your-first-typed-fetch.html` (arc L8) still downstream — do not renumber yet.
+
+**--- prior resume note (session 4) below, still valid for L7+ ---**
+
 
 **Done:** Lessons 1–**5** all complete with playbacks. Lesson 5 (pull requests) closed this
 session — see [[learning-records/0009-lesson-5-complete]]. `pull request` now in `GLOSSARY.md` and
