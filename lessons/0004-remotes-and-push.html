@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson 4 — Remotes and Push</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<header class="masthead">
+  <p class="eyebrow">Lesson 04 · Run Planner · Track A — work blocker</p>
+  <h1>Remotes and Push: getting your code onto GitHub</h1>
+  <p class="standfirst">One idea: a <em>remote</em> is a second, complete copy of your repository
+  on another machine. Git never syncs to it on its own — you <em>push</em> and <em>pull</em>
+  deliberately, exactly like a commit is deliberate. About 20 minutes.</p>
+</header>
+
+<div class="ask">
+  <strong>I'm your teacher for this.</strong> Nearly everyone's first <code>git push</code> fails
+  once — on authentication, or a "rejected" error — and it feels like you broke something. You
+  didn't; both are normal and both have a clean cause. When you hit one, stop and paste me the
+  exact message. Reading push errors is a skill, and this is where you start it.
+</div>
+
+<h2>Why this one now</h2>
+
+<p>Everything you did in Lesson 3 lives in exactly one place: your laptop. Your team's whole
+workflow — pull requests, review, CI running tests — happens on a <em>shared</em> copy on GitHub.
+You cannot open a pull request against a copy that doesn't exist yet. This lesson creates that
+copy and gets your history onto it. It's the floor under the JSM work.</p>
+
+<h2>The one new idea</h2>
+
+<p>So far "your repo" meant one thing. Now there are two copies of it: the one on your machine, and
+one on GitHub. <strong>They are independent.</strong> A commit you make locally is invisible to
+GitHub until you push it; a change made on GitHub is invisible to you until you pull it. Nothing
+crosses the gap automatically.</p>
+
+<p>This is the same deliberateness as Lesson 3's commit. Dropbox syncs the instant you save; Git
+does nothing until you say so. A commit says "remember this locally"; a push says "send these
+committed snapshots to the other copy." Two separate deliberate acts.</p>
+
+<div class="callout">
+  <span class="label">/jargon — remote</span>
+  <p><strong>Remote:</strong> a full copy of your repository hosted on another machine (here,
+  GitHub), that your local repo knows how to talk to. A repo can have several; the first and
+  conventional one is named <code>origin</code>.</p>
+  <p><strong>Handle:</strong> a shared drive the team pushes finished work to and pulls the latest
+  from — except it holds the entire history, not just the current files.</p>
+  <p><strong>Where the analogy breaks:</strong> a shared drive updates live as you edit. A remote
+  updates <em>only</em> when someone pushes to it or pulls from it. And <code>origin</code> is just
+  a <em>nickname</em> for a URL — nothing magic about the word.</p>
+  <p><strong>In a sentence:</strong> "I added the GitHub URL as <code>origin</code> so I could push
+  to it."</p>
+  <p><strong>Common misuse:</strong> thinking the remote is "the real repo" and yours is a copy. All
+  copies are equal in Git — yours is as complete as GitHub's. GitHub is just the copy the team
+  <em>agrees</em> to treat as the shared one.</p>
+</div>
+
+<div class="callout">
+  <span class="label">/jargon — push</span>
+  <p><strong>Push:</strong> sending commits that exist in your local repo but not yet on the remote,
+  so the remote's history catches up to yours.</p>
+  <p><strong>Handle:</strong> uploading — but uploading <em>committed snapshots</em>, not the files
+  currently open in your editor.</p>
+  <p><strong>Where the analogy breaks:</strong> uploading a file replaces whatever was there. Push
+  <em>appends</em> your new commits onto the remote's existing history, and it refuses if doing so
+  would overwrite commits you don't have yet (that's the "rejected" error, and it's protecting
+  you).</p>
+  <p><strong>In a sentence:</strong> "I committed the fix, then pushed so the team could see it."</p>
+  <p><strong>Common misuse:</strong> "push saves my current work." It doesn't touch uncommitted or
+  unstaged edits at all — push only moves things you already committed. Nothing staged-but-not-
+  committed goes anywhere.</p>
+</div>
+
+<h2>The picture</h2>
+
+<pre><code>  your laptop                         GitHub
+  ┌─────────────┐    git push  ─►    ┌─────────────┐
+  │ local repo  │                    │   origin    │
+  │ (main)      │   ◄─ git pull      │  (main)     │
+  └─────────────┘                    └─────────────┘
+  every commit lives here            the shared copy the team uses</code></pre>
+
+<p><code>push</code> moves commits right; <code>pull</code> moves them left. That's the entire
+relationship. Pull requests, review and CI are all rituals built <em>on top</em> of this one gap —
+you'll meet them next lesson.</p>
+
+<h2>The authentication reality — read before you push</h2>
+
+<p>The moment you first push, GitHub needs to know it's really you. <strong>You cannot use your
+GitHub password</strong> — GitHub turned that off for Git in 2021. This trips up literally everyone
+once, so here's the map.</p>
+
+<div class="callout gotcha">
+  <span class="label">On Windows, the easy path usually just happens</span>
+  <p>Git for Windows ships with <strong>Git Credential Manager</strong>. On your first push it pops
+  open a browser window asking you to sign in to GitHub; you click approve, and it stores a token
+  in Windows for next time. If that window appears — great, follow it, you're done. The options
+  below are for when you want to choose deliberately, or the popup doesn't appear.</p>
+</div>
+
+<table>
+  <thead><tr><th>Method</th><th>How</th><th>When it suits you</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Credential Manager</td>
+      <td>Browser sign-in on first push; nothing to set up.</td>
+      <td>Default on Windows. Start here.</td>
+    </tr>
+    <tr>
+      <td>Personal Access Token</td>
+      <td>Create a token in GitHub settings; paste it as the "password" when prompted.</td>
+      <td>The popup didn't appear, or you're on a plain terminal. Treat the token like a password.</td>
+    </tr>
+    <tr>
+      <td>SSH key</td>
+      <td>Generate a keypair, add the public half to GitHub, use the <code>git@…</code> URL.</td>
+      <td>You push many times a day and want zero prompts ever. More setup up front.</td>
+    </tr>
+    <tr>
+      <td><code>gh</code> CLI</td>
+      <td><code>gh auth login</code> once; it configures Git for you.</td>
+      <td>You'll use GitHub's command line anyway. One command, done.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Any of them work; the token or key is just <em>proof it's you</em>. Full, current instructions:
+<a href="https://docs.github.com/en/authentication">GitHub — Authentication</a>. Don't over-study
+this — try the push, and let the prompt tell you what it wants.</p>
+
+<h2>The commands</h2>
+
+<p>Two things have to happen: create the empty copy on GitHub, then tell your local repo about it
+and push.</p>
+
+<pre><code># 1. On github.com: New repository → name it "run-planner"
+#    → do NOT tick "Add a README", ".gitignore", or a licence → Create.
+#    (Why empty matters is the gotcha below.)
+
+# 2. Back in your local repo:
+git remote add origin https://github.com/&lt;you&gt;/run-planner.git   # name the URL "origin"
+git remote -v                                                    # check it stuck
+git push -u origin main                                          # send main, and remember the link</code></pre>
+
+<p>That <code>-u</code> (short for <code>--set-upstream</code>) is worth understanding, not just
+copying. It records that your local <code>main</code> tracks <code>origin/main</code> — so from
+then on a bare <code>git push</code> or <code>git pull</code> knows where to go, no arguments
+needed. You set it once per branch.</p>
+
+<div class="callout gotcha">
+  <span class="label">Why the GitHub repo must be empty</span>
+  <p>If you let GitHub add a README (or a licence, or a <code>.gitignore</code>), the remote starts
+  with <strong>a commit your laptop has never seen</strong>. Your push then gets
+  <strong>rejected</strong> — "updates were rejected because the remote contains work that you do
+  not have locally" — because Git won't silently fuse two unrelated histories. Create it empty and
+  the push is clean. (If you already made it non-empty, don't panic — tell me and we'll reconcile
+  it; it's a two-command fix, not a redo.)</p>
+</div>
+
+<h3>Public or private?</h3>
+
+<p>Your call, and both are defensible. <strong>Private</strong> is the safe default for anything
+work-adjacent — no one sees it but you. <strong>Public</strong> makes it a portfolio piece a future
+employer can read. Run Planner has no secrets (you checked <code>.gitignore</code> last lesson), so
+either is fine here; if in doubt, private — you can flip it public later in one click.</p>
+
+<h2>Check yourself</h2>
+
+<div class="quiz" data-answer="0"
+     data-explain="A remote is a full, independent copy of the repository — as complete as yours, just hosted elsewhere and treated as the shared one.">
+  <p class="quiz-q">A remote is, precisely…</p>
+  <button class="quiz-choice">another full copy of your repository</button>
+  <button class="quiz-choice">a live mirror that updates automatically</button>
+  <button class="quiz-choice">the one branch GitHub decides to deploy</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="quiz" data-answer="0"
+     data-explain="Push sends committed history the remote lacks. It ignores unstaged and uncommitted edits, and it does not perform a merge.">
+  <p class="quiz-q">What does <code>git push</code> actually send?</p>
+  <button class="quiz-choice">commits the remote does not have</button>
+  <button class="quiz-choice">every file you currently have changed</button>
+  <button class="quiz-choice">your branch merged into the remote</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="quiz" data-answer="0"
+     data-explain="A README created on GitHub is a commit your local repo lacks, so pushing would fuse two unrelated histories — Git rejects that.">
+  <p class="quiz-q">Why create the GitHub repo with no README?</p>
+  <button class="quiz-choice">so its history can't diverge from yours</button>
+  <button class="quiz-choice">so the first push downloads much faster</button>
+  <button class="quiz-choice">so GitHub won't charge you for storage</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="task">
+  <h3>Your turn — put Run Planner on GitHub</h3>
+  <p>You do every step. I'm here the second anything looks off — especially the first push.</p>
+  <ol>
+    <li>On github.com, create an <strong>empty</strong> repository named <code>run-planner</code>
+        — no README, no <code>.gitignore</code>, no licence. Choose private or public deliberately.</li>
+    <li>In your local repo, <code>git remote add origin &lt;the URL GitHub shows you&gt;</code>,
+        then <code>git remote -v</code> to confirm it's registered.</li>
+    <li><code>git push -u origin main</code>. If a browser sign-in appears, follow it. If a push
+        error appears instead, <strong>read it, then paste it to me</strong> — don't guess.</li>
+    <li>Refresh the repo page on GitHub. Your files and <code>main</code>'s history should be there.
+        Find the commit list: you should see <strong>three</strong> commits — exactly what's on
+        <code>main</code>. The two extra commits on <code>practice-branch</code> are <em>not</em>
+        here, because you pushed <code>main</code>, not that branch. That absence is the lesson
+        working, not a bug.</li>
+    <li><strong>Stop there.</strong> Do <em>not</em> push <code>practice-branch</code> yet — that
+        branch is the star of Lesson 5, where you'll push it and open a real pull request.</li>
+  </ol>
+  <p>The win: your history now exists in two places, and you chose when it crossed the gap.</p>
+</div>
+
+<p>Then <strong>play two terms back to me in your own words</strong> — <em>remote</em> and
+<em>push</em> — and they go in your glossary. Especially: what's the difference between committing
+and pushing?</p>
+
+<h2>Read this</h2>
+
+<p><strong>Primary source:</strong>
+<a href="https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes">Pro Git, chapter 2.5 —
+Working with Remotes</a>. The "Pushing to Your Remotes" and "Showing Your Remotes" sections map
+exactly onto what you just did. For the auth step specifically,
+<a href="https://docs.github.com/en/authentication">GitHub's authentication docs</a> are the
+current source of truth — the UI shifts, so trust them over any screenshot.</p>
+
+<h2>Next</h2>
+
+<p>Lesson 5 is the workflow your team actually runs on — <strong>pull requests</strong>: push
+<code>practice-branch</code>, open a PR, see the review view, and walk the
+<strong>squash-and-merge</strong> lifecycle. That's where the merge you declined to fake becomes a
+real one, done GitHub's way — and where "why does <code>push</code> come before the merge?" finally
+resolves.</p>
+
+<footer class="lesson-footer">
+  <p>Lesson 4 of the Run Planner course ·
+  <a href="0003-git-commits-and-branches.html">← Lesson 3</a> ·
+  <a href="../obsidian/Git Cheat Sheet.md">Git cheat sheet</a> ·
+  <a href="../reference/api-integration-security.html">API security reference</a> ·
+  <a href="../MISSION.md">Mission</a> · <a href="../NOTES.md">Lesson plan</a></p>
+  <p><em>Questions are the point. Ask me anything about this lesson in the session.</em></p>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

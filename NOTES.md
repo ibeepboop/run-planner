@@ -58,23 +58,35 @@ wherever the choice exists.
 The exact lesson cadence (lecture-then-exam vs lecture-only vs review-only) was asked but never
 settled. Current format: short explainer, retrieval quiz, then a task she does herself.
 
-## RESUME HERE (last updated end of session 2, 21 July 2026)
+## RESUME HERE (last updated end of session 3, 21 July 2026 — cont.)
 
-**Done:** Lessons 1 and 2 complete with playbacks. Lesson 3 (Git) delivered, **steps 1–5 of 7
-done**. See [[learning-records/0004-lesson-1-complete]], [[learning-records/0005-lesson-2-complete]]
-and [[learning-records/0006-git-session-and-work-blocker]]. `callback`, `predicate` and `filter`
-are in `GLOSSARY.md`.
+**Done:** Lessons 1–**4** all complete with playbacks. Lesson 4 (remotes + push) closed this
+session — see [[learning-records/0008-lesson-4-complete]] (and 0007 for Lesson 3). `remote` and
+`push` now in `GLOSSARY.md` and the cheat sheet.
 
-**Repo state:** 2 commits on `main`, clean tree, no remote, no branches yet. `.gitignore` now
-ignores only `/scratch` of the course material — she committed the rest after the ADR argument.
+**Repo state (verified live):** `main` (3 commits) is **pushed to GitHub** — remote `origin` exists,
+first push worked, Git Credential Manager handled auth on Windows. `practice-branch` (2 extra
+commits) is **still local and unmerged** — the Lesson 5 PR vehicle. `scratch/` is committed.
 
-**Pick up with — in order:**
+**Decisions still standing:** she declined a bare local merge (wants the real PR flow — respected);
+Conventional Commits is her team's convention (endorse; her `lesson:` prefix is a custom type).
 
-1. **Finish Lesson 3, steps 6–7.** Create `practice-branch`, commit on it, switch back to `main`,
-   and look at `scratch/02-lists.js`. Make her **predict before looking** — that step is the one
-   that makes branches click, and she hasn't done it. (Note `/scratch` is gitignored, so pick a
-   tracked file for the branch experiment instead — e.g. add a line to `README.md`. Fix this in
-   the lesson text.)
+**Living artifact:** `obsidian/Git Cheat Sheet.md` now covers remotes/push + first-push traps. Keep
+growing it each Git lesson.
+
+**Recurring pattern to keep exploiting:** the local-vs-remote (branch/merge vs push/pull)
+conflation keeps resurfacing and keeps getting resolved *by observation* — she pushed `main`, saw
+only 3 commits on GitHub, and that became the proof that push is per-branch. Lean on what she can
+*see*, not just definitions.
+
+**She catches my errors** — the Lesson 4 task said "five commits," she flagged that main has three.
+Fixed. This is the mission working; name it when it happens.
+
+**Pick up with — Lesson 5: pull requests (NOT YET WRITTEN).** `git push -u origin practice-branch`
+(branch goes up unmerged) → open a PR on GitHub → review view → **squash-and-merge on GitHub** →
+`git pull` merged main back down. Spine: **Git's local `merge` vs GitHub's PR-button merge** (merge
+runs on GitHub, so push comes first — resolves her "push up" instinct for good). Last pure-Git
+blocker before the JSM integration. She writes/runs everything.
 2. **Answer her open question:** she asked for "a copy of the git-switch.html file" in
    `obsidian/`. No such file exists. Two candidates, unresolved when the session ended: a *new*
    `reference/git-essentials.html` consolidating this session (commit/staging/branch model,
