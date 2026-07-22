@@ -107,8 +107,8 @@ Both send permissive CORS headers, so the browser can call them directly.</p>
   <span class="label">The columnar problem</span>
   <p><code>daily</code> is <strong>columnar</strong> — parallel arrays, one per variable, aligned
   by index. Day 0 is <code>time[0]</code> + <code>temperature_2m_max[0]</code> and so on. There is
-  no per-day object. Turning this into <code>DailyForecast[]</code> is the job of the transform
-  layer in Lesson 9.</p>
+  no per-day object. Turning this into <code>DailyForecast[]</code> is the job of a later transform
+  layer, once forecasts are on the table.</p>
 </div>
 
 <p>Units are <em>not</em> inside <code>daily</code> — they live in the sibling
@@ -131,7 +131,7 @@ new API and it settles arguments about response shape instantly.</p>
 </ul>
 
 <footer class="lesson-footer">
-  <p>Reference · <a href="../lessons/0007-your-first-typed-fetch.html">Lesson 7: Your First Typed Fetch</a></p>
+  <p>Reference · <a href="../lessons/0010-your-first-typed-fetch.html">Lesson 10: Your First Typed Fetch</a></p>
 </footer>
 
 </body>

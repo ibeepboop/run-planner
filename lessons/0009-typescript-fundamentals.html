@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson 9 — TypeScript from the ground up</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<header class="masthead">
+  <p class="eyebrow">Lesson 09 · Run Planner · TypeScript</p>
+  <h1>TypeScript from the ground up</h1>
+  <p class="standfirst">Everything in <code>getWeather.js</code> still works &mdash; and everything in it
+  is untyped. Nothing stops you writing <code>data.resutls</code> instead of <code>data.results</code>
+  and finding out at runtime, if you find out at all. Today: the two pieces of syntax that fix that,
+  and an honest look at what they actually check and when. About 25 minutes.</p>
+</header>
+
+<div class="ask">
+  <strong>I&rsquo;m your teacher for this.</strong> TypeScript has a lot of surface area &mdash; today
+  is deliberately narrow: annotations and <code>interface</code>, nothing else. If a term shows up that
+  I haven&rsquo;t defined, stop and ask rather than guessing past it.
+</div>
+
+<h2>Why this one now</h2>
+
+<p>Lesson 8 gave <code>getWeather.js</code> three checks for &ldquo;did it work?&rdquo; &mdash; but every
+  value in that function is still whatever JavaScript decides it is at the moment. <code>data</code> could
+  be anything. <code>data.results</code> and <code>data.resutls</code> look identical to your editor:
+  both are just a property read that might be <code>undefined</code>. Nothing before runtime tells you
+  which one you actually typed.</p>
+
+<p>TypeScript&rsquo;s whole pitch is: <strong>you write down the shape you expect, and something checks
+  reality against it before the code runs</strong> &mdash; not after, the way your check-3 <code>if
+  (!data.results)</code> does. Worth being precise about what that buys you, though &mdash; it doesn&rsquo;t
+  make check 3 disappear. You&rsquo;ll see why by the end of this lesson.</p>
+
+<h2>The one idea: a written-down shape, checked before you run</h2>
+
+<p>Plain JavaScript has types &mdash; every value is a number, a string, an object, whatever &mdash; but
+  nothing makes you <em>declare</em> them, and nothing stops you passing the wrong one. TypeScript adds a
+  layer on top: you annotate what a value should be, and a checker compares your code against those
+  annotations. Get it wrong, and you find out while you&rsquo;re still typing, in your editor &mdash; not
+  three weeks later when a user searches for a place with no results.</p>
+
+<h3>Annotating a function</h3>
+
+<p>The most common place you&rsquo;ll write a type is on a function&rsquo;s parameters and return value:</p>
+
+<pre><code>function double(n: number): number {
+  return n * 2;
+}</code></pre>
+
+<p><code>n: number</code> says &ldquo;this parameter must be a number.&rdquo; The <code>: number</code>
+  after the closing <code>)</code> says &ldquo;this function returns a number.&rdquo; Call
+  <code>double("5")</code> in an editor that understands TypeScript, and it tells you right there:
+  <code>Argument of type 'string' is not assignable to parameter of type 'number'</code>. You never ran
+  the code. You don&rsquo;t need to.</p>
+
+<h3>Interface: the shape of an object</h3>
+
+<p>A function signature covers one value at a time. Most of what you&rsquo;ll type is an object with
+  several properties &mdash; a geocoding result, a forecast day, a user. <code>interface</code> names that
+  shape once, so you can reuse it:</p>
+
+<pre><code>interface Point {
+  x: number;
+  y: number;
+}
+
+function distanceFromOrigin(p: Point): number {
+  return Math.sqrt(p.x ** 2 + p.y ** 2);
+}</code></pre>
+
+<p>Now write <code>p.z</code> anywhere in that function, and your editor says
+  <code>Property 'z' does not exist on type 'Point'</code>. That&rsquo;s the <code>data.resutls</code>
+  typo, caught the same way &mdash; <strong>if</strong> <code>data</code> is typed as an interface instead
+  of left as whatever JavaScript infers.</p>
+
+<h3>Optional properties: the honest version of a shape</h3>
+
+<p>Not every property is always there. You already know one case by heart: the geocoding API&rsquo;s
+  <code>results</code> key is <strong>absent entirely</strong> when nothing matches &mdash; not
+  <code>[]</code>, not <code>null</code>, gone. A <code>?</code> after the property name tells TypeScript
+  that&rsquo;s allowed:</p>
+
+<pre><code>interface GeocodingResponse {
+  results?: GeocodingResult[];   // absent when nothing matches
+}</code></pre>
+
+<p>Here&rsquo;s the part worth sitting with: once <code>results</code> is marked optional, TypeScript
+  will <strong>not let you write</strong> <code>data.results.length</code> without checking first &mdash;
+  it flags <code>Object is possibly 'undefined'</code>. Your check-3 <code>if (!data.results)</code> from
+  Lesson 8 isn&rsquo;t made redundant by this &mdash; it&rsquo;s the thing the type system is now
+  <em>forcing</em> everyone who touches this code to keep doing, instead of trusting them to remember.</p>
+
+<div class="callout gotcha">
+  <span class="label">Types are a claim, not a guarantee</span>
+  <p><code>response.json()</code> hands you back a value typed <code>any</code> &mdash; TypeScript has no
+  way to know what a server actually sent. Writing <code>interface GeocodingResponse</code> and asserting
+  the JSON into that shape is a promise you&rsquo;re making, not something verified against the network.
+  If the promise is wrong &mdash; you typed a field that isn&rsquo;t optional but sometimes is &mdash; the
+  checker stays quiet and you&rsquo;re back to a runtime surprise. This is exactly why the shape has to
+  match reality, verified fields and all, not what looks tidy.</p>
+</div>
+
+<h2>The gotcha that catches almost everyone once</h2>
+
+<p>Run this yourself before reading on. Save it as a <code>.ts</code> file and run it with plain
+  <code>node</code>, no compiler, nothing installed:</p>
+
+<pre><code>function double(n: number): number {
+  return n * 2;
+}
+
+console.log(double("5"));</code></pre>
+
+<p>Guess what happens, then run <code>node yourfile.ts</code>. It prints <code>10</code>. No error, no
+  warning, nothing. <code>"5"</code> got multiplied like a number and JavaScript quietly coerced it.</p>
+
+<div class="callout gotcha">
+  <span class="label">Node doesn&rsquo;t check types &mdash; it erases them</span>
+  <p>Modern Node (yours is v24) can run <code>.ts</code> files directly, but all it does is strip the
+  annotations out before running &mdash; <code>n: number</code> becomes plain <code>n</code>, as if you&rsquo;d
+  deleted every colon-type yourself. It never compares your call against the annotation. The
+  <strong>checking</strong> happens somewhere else entirely: your editor&rsquo;s TypeScript language
+  service (VS Code ships one built in, no install needed), or the standalone compiler, <code>tsc</code>,
+  run separately. &ldquo;It ran without error&rdquo; and &ldquo;it&rsquo;s type-correct&rdquo; are two
+  different claims &mdash; today is the first time those have come apart for you.</p>
+</div>
+
+<div class="callout">
+  <span class="label">/jargon &mdash; type annotation, interface</span>
+  <p><strong>Type annotation:</strong> the <code>: number</code> / <code>: string</code> / <code>:
+  SomeInterface</code> you write after a variable, parameter, or function signature, declaring what shape
+  that value must have.</p>
+  <p><strong>Interface:</strong> a named, reusable description of an object&rsquo;s shape &mdash; which
+  properties it has, their types, and which are optional.</p>
+  <p><strong>Handle:</strong> an annotation is a label on one box. An interface is the label
+  <em>template</em> you stamp onto every box of that kind, so you only design the label once.</p>
+  <p><strong>Where the analogy breaks:</strong> a real label doesn&rsquo;t stop you putting the wrong
+  thing in the box &mdash; TypeScript&rsquo;s checker actively refuses to compile code that does, or at
+  minimum lights it up red in your editor. The label enforces itself, at edit time, before anything runs.</p>
+  <p><strong>In a sentence:</strong> &ldquo;I gave <code>GeocodingResponse</code> an interface with
+  <code>results</code> marked optional, so the compiler makes me handle the no-match case instead of
+  letting me forget it.&rdquo;</p>
+  <p><strong>Common misuse:</strong> treating a passing <code>tsc</code> run (or a clean-looking editor) as
+  proof the <em>data</em> is correct. It only proves your code is internally consistent with the shape you
+  wrote down &mdash; see the callout above. A wrong interface compiles just as cleanly as a right one.</p>
+</div>
+
+<h2>Check yourself</h2>
+
+<div class="quiz" data-answer="0"
+     data-explain="With no type at all, data.resutls is just a property read on an untyped value — JavaScript returns undefined and moves on. No exception, no warning, nothing to notice unless you're specifically checking for it.">
+  <p class="quiz-q">An untyped JS variable holding an API response &mdash; what stops you writing
+  <code>data.resutls</code> instead of <code>data.results</code>?</p>
+  <button class="quiz-choice">nothing &mdash; it&rsquo;s undefined, no error</button>
+  <button class="quiz-choice">JavaScript throws a ReferenceError</button>
+  <button class="quiz-choice">Node refuses to run the file</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="quiz" data-answer="1"
+     data-explain="Node's .ts support is type stripping, not type checking — it deletes the annotations and runs whatever JavaScript is left underneath. The mismatch is real, but nothing at runtime is watching for it.">
+  <p class="quiz-q">A <code>.ts</code> file calls a <code>number</code>-typed parameter with a string, and
+  you run it with plain <code>node file.ts</code>. What happens?</p>
+  <button class="quiz-choice">node reports the type error and refuses to run</button>
+  <button class="quiz-choice">node strips the annotations and runs it anyway, mismatch and all</button>
+  <button class="quiz-choice">node throws a TypeError at that line</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="quiz" data-answer="1"
+     data-explain="Marking a property optional doesn't make it safe to use unchecked — the opposite. The compiler now requires you to narrow it (an if-check, or similar) before you can treat it as present, which is exactly the discipline check 3 from Lesson 8 already had you doing by hand.">
+  <p class="quiz-q"><code>interface GeocodingResponse { results?: GeocodingResult[] }</code> &mdash; what
+  does the <code>?</code> force you to do before calling <code>data.results.length</code>?</p>
+  <button class="quiz-choice">nothing, optional properties are always safe to read</button>
+  <button class="quiz-choice">check it&rsquo;s not undefined first, or the checker flags the line</button>
+  <button class="quiz-choice">cast it to <code>any</code> before use</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="task">
+  <h3>Your turn &mdash; write it, break it, watch where each check actually lives</h3>
+  <p>New file: <code>scratch/typescript-fundamentals-practice.ts</code>. Write everything yourself from
+  the patterns above &mdash; don&rsquo;t paste mine verbatim.</p>
+  <ol>
+    <li><strong>Write a typed function</strong> with at least one parameter annotation and a return type
+      &mdash; doesn&rsquo;t have to be <code>double</code>, pick anything small.</li>
+    <li><strong>Write an interface</strong> with at least two properties, one of them marked optional with
+      <code>?</code>. Reuse <code>GeocodingResult</code>&rsquo;s real shape from
+      <a href="../reference/open-meteo.html">the Open-Meteo reference</a> if you want it to pay forward.</li>
+    <li><strong>Write a function that takes your interface as a parameter</strong>, and inside it,
+      deliberately access a property name that doesn&rsquo;t exist on the interface (a typo, on purpose).
+      Open the file in VS Code and confirm you get a red squiggle <em>without running anything</em>.</li>
+    <li><strong>Now run the whole file</strong> with <code>node scratch/typescript-fundamentals-practice.ts</code>.
+      Does it run despite the squiggle? Read what actually happens and be ready to explain why, in terms of
+      what Node does versus what your editor does.</li>
+    <li><strong>Trigger the optional-property check</strong>: try to read a property off your optional
+      field without checking it first (e.g. <code>.length</code> on the optional array). Confirm your
+      editor objects, then fix it with an <code>if</code> check and confirm the squiggle disappears.</li>
+  </ol>
+  <p>The win: you&rsquo;ve now watched, with your own eyes, that a type error and a runtime error are not
+  the same event, and that they&rsquo;re caught by two completely different things.</p>
+</div>
+
+<p>Then <strong>play it back to me</strong>: <em>what does an annotation actually check, what does marking
+  a property optional force you to do, and what part of this catches nothing at all if you only ever run
+  your file with plain <code>node</code>?</em> When that&rsquo;s solid, <code>type annotation</code> and
+  <code>interface</code> go in your
+  <a href="file:///C:/Users/Michelle/.claude/GLOSSARY.md">glossary</a>.</p>
+
+<h2>Read this</h2>
+
+<p><strong>Primary source:</strong>
+  <a href="https://www.typescriptlang.org/docs/handbook/2/everyday-types.html">The TypeScript Handbook
+  &mdash; Everyday Types</a>. It covers exactly today&rsquo;s ground &mdash; primitives, function
+  annotations, object types, and the <code>?</code> optional marker &mdash; in the project&rsquo;s own
+  words, and it&rsquo;s the page you&rsquo;ll come back to most.</p>
+
+<h2>Next</h2>
+
+<p>You now have both pieces the held-back typed-fetch lesson has been waiting on: annotations and
+  <code>interface</code>, including the optional-property trick that types the geocoding
+  &ldquo;no-match&rdquo; case honestly. <strong>Lesson 10</strong> puts them to work on a real response
+  body &mdash; the <code>GeocodingResponse</code> and <code>GeocodingResult</code> interfaces, typed
+  against the actual API, not a guess.</p>
+
+<footer class="lesson-footer">
+  <p>Lesson 9 of the Run Planner course ·
+  <a href="0008-error-handling.html">&larr; Lesson 8</a> ·
+  <a href="../reference/open-meteo.html">Open-Meteo reference</a> ·
+  <a href="../MISSION.md">Mission</a> · <a href="../NOTES.md">Lesson plan</a></p>
+  <p><em>Questions are the point. Ask me anything about this lesson in the session.</em></p>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

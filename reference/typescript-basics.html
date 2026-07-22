@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reference — TypeScript basics</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<header class="masthead">
+  <p class="eyebrow">Reference · Run Planner</p>
+  <h1>TypeScript basics</h1>
+  <p class="standfirst">Annotations and <code>interface</code> — the syntax from Lesson 9, kept short
+  for quick lookup. Verified live on Node v24, 22 July 2026.</p>
+</header>
+
+<h2>Annotating a function</h2>
+
+<pre><code>function double(n: number): number {
+  return n * 2;
+}</code></pre>
+
+<table>
+  <thead><tr><th>Piece</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>n: number</code></td><td>Parameter type — what you're allowed to pass in.</td></tr>
+    <tr><td><code>: number</code> after <code>)</code></td><td>Return type — what the function promises to give back.</td></tr>
+  </tbody>
+</table>
+
+<p>Return type can usually be left off and inferred from the <code>return</code> statement, but
+writing it explicitly checks the body even before it's finished.</p>
+
+<h2><code>interface</code> — naming an object's shape</h2>
+
+<pre><code>interface Point {
+  x: number;
+  y: number;
+}
+
+function distanceFromOrigin(p: Point): number {
+  return Math.sqrt(p.x ** 2 + p.y ** 2);
+}</code></pre>
+
+<p>Write <code>p.z</code> anywhere <code>p</code> is typed <code>Point</code>, and the checker says
+<code>Property 'z' does not exist on type 'Point'</code> — without running anything.</p>
+
+<h3>Calling a function typed with an interface</h3>
+
+<p>An interface only describes a shape — you still build a real value to pass in, either inline or
+as a variable:</p>
+
+<pre><code>distanceFromOrigin({ x: 3, y: 4 });
+
+const origin: Point = { x: 0, y: 0 };
+distanceFromOrigin(origin);</code></pre>
+
+<p>Every <strong>required</strong> (non-<code>?</code>) property must be present, or the checker
+flags the object literal itself — not just typo'd property names inside the function, missing
+properties at the call site too.</p>
+
+<h3>Optional properties (<code>?</code>)</h3>
+
+<pre><code>interface GeocodingResponse {
+  results?: GeocodingResult[];   // absent when nothing matches
+}</code></pre>
+
+<p>Marking a property optional means the checker will <strong>not</strong> let you read anything
+off it — <code>.length</code>, an index, any property — until you've narrowed it with a check:</p>
+
+<pre><code>if (!data.results) {
+  return;               // narrowed: TS now knows data.results exists below this point
+}
+data.results.length;    // fine</code></pre>
+
+<div class="callout gotcha">
+  <span class="label">Types are a claim, not a guarantee</span>
+  <p><code>response.json()</code> returns <code>any</code> — TypeScript has no way to check what a
+  server actually sent. Asserting it into an interface is a promise you're making, not something
+  verified against the network. A wrong interface compiles exactly as cleanly as a right one.</p>
+</div>
+
+<h2>The gotcha: Node runs <code>.ts</code>, but doesn't check it</h2>
+
+<p>Node v24+ can execute a <code>.ts</code> file directly — but it only <strong>strips</strong> the
+annotations before running, it never compares your code against them. The type checker lives
+somewhere else: your editor's TypeScript language service (VS Code ships one, no install needed),
+or <code>tsc</code> run separately.</p>
+
+<pre><code>function double(n: number): number {
+  return n * 2;
+}
+console.log(double("5"));   // node yourfile.ts → prints 10, no complaint</code></pre>
+
+<p>Confirmed live both ways: a deliberate typo'd property access shows a red squiggle in the editor
+and still runs to completion under plain <code>node</code>.</p>
+
+<div class="callout gotcha">
+  <span class="label"><code>+</code> is the odd one out</span>
+  <p>Once types are erased, ordinary JS coercion takes over — and which rule applies depends on the
+  <strong>operator</strong>. <code>+</code> concatenates if either side is a string:
+  <code>"5" + 3</code> is <code>"53"</code>, not <code>8</code>. Every other arithmetic operator
+  (<code>*</code>, <code>-</code>, <code>/</code>) has no string meaning, so it coerces both sides
+  to numbers instead: <code>"5" * 2</code> is <code>10</code>.</p>
+</div>
+
+<h2>Source</h2>
+
+<ul>
+  <li><a href="https://www.typescriptlang.org/docs/handbook/2/everyday-types.html">TypeScript Handbook — Everyday Types</a></li>
+</ul>
+
+<footer class="lesson-footer">
+  <p>Reference · <a href="../lessons/0009-typescript-fundamentals.html">Lesson 9: TypeScript from the ground up</a></p>
+</footer>
+
+</body>
+</html>

@@ -58,7 +58,77 @@ wherever the choice exists.
 The exact lesson cadence (lecture-then-exam vs lecture-only vs review-only) was asked but never
 settled. Current format: short explainer, retrieval quiz, then a task she does herself.
 
-## RESUME HERE (last updated session 7, 22 July 2026)
+## RESUME HERE (last updated session 8, 22 July 2026)
+
+**Lesson 9 written this session — `lessons/0009-typescript-fundamentals.html`.** Scope held
+deliberately narrow per the pace rule: annotations (function params/return) and `interface`,
+including optional properties (`?`), motivated directly by L8's untyped `data.results`. Centerpiece
+demo, verified live this session: `node file.ts` **strips** type annotations and runs the code
+regardless — `double("5")` prints `10` with zero complaint from plain `node` — because Node's
+`.ts` support is type-stripping, not type-checking. The actual checker is the editor's TS language
+service (VS Code ships one, no install needed) or `tsc` run separately. This lets her practise in a
+plain `.ts` file run with `node`, same pattern as all prior scratch work — no `npm install`, no
+build tooling, keeping "tooling and modules" (npm/Vite) genuinely deferred rather than sneaking in
+through the back door.
+
+**Numbering snag from session 7 resolved.** The held-back typed-fetch file is now
+`lessons/0010-your-first-typed-fetch.html` (renamed via `git mv` from `0009-...`, no content
+rewrite — same safe pattern as the session-6 rename). Its stale title/eyebrow/footer/body
+references ("Lesson 1", "Lesson 05", "Lesson 7 of the Run Planner course", "Lesson 8 turns the
+hardcoded Boulder...") are now fixed to Lesson 10, with a proper back-link to Lesson 9. **Note:**
+this file still assumes Vue concepts (`ref()`, `onMounted`) that no lesson has taught yet — the
+arc's original "What a component is" (Vue SFCs/reactivity) was never delivered before Track A
+reordered everything around Git and the API. That gap is *not* fixed yet — flag it before Lesson 10
+is actually delivered; it may need a short Vue-basics lesson inserted ahead of it, or a trim.
+
+**Also fixed in passing:** `reference/open-meteo.html` had two more stale references left over from
+the session-6 rename (footer linked `lessons/0007-your-first-typed-fetch.html`; a body mention said
+"Lesson 9" for the still-unwritten forecast transform layer). Both corrected — the transform-layer
+mention now avoids hardcoding a number, since Track A reordering keeps shifting what number lands
+where. **General lesson from this recurrence: when a lesson file gets renumbered, grep the whole
+workspace for its old filename and old lesson-number text, not just the file itself** — reference
+docs link to lessons too, and their strings don't move with a `git mv`.
+
+**Lesson 9 CLOSED, same session.** Full detail in [[learning-records/0013-lesson-9-complete]].
+`type annotation`, `interface` (with the optional-property-forces-narrowing note and the
+call-site-needs-every-required-property note), and a new coercion entry (`+` concatenates on mixed
+types, `*`/`-`/`/` coerce to number) all in `GLOSSARY.md`. New reference doc:
+`reference/typescript-basics.html`, ported to `obsidian/TypeScript Basics.md` on request (not yet
+moved into her actual vault — still staged).
+
+**Evidence was fully first-hand, not just recited:** she triggered the type-vs-runtime gap herself
+a second time beyond the lesson's own demo (typo'd `admin11111`, saw the squiggle, fixed it, then
+ran with `node` and confirmed it executes regardless), and correctly predicted `getLocation`'s
+output before running it. Homework's `getLocation` function correctly narrows both optional fields
+before touching `.length` on either.
+
+**Corrections this session, for pattern-tracking:**
+- Three unrelated syntax errors arrived stacked at once early on (missing return-type colon, an
+  `if` malformed as a function call on a non-function value, a stray incomplete `function`) and she
+  initially read this as "I don't understand functions." Framed as separate rules colliding, not one
+  deficit — she fixed the return-type colon and `if` shape herself in one pass once isolated. Keep
+  doing this: when several small syntax errors land together, name them as distinct rules before
+  she starts to generalize a broader "I don't get X" conclusion from the pile-up.
+- Got stuck on *calling* a function typed with an interface — hadn't connected "the interface
+  describes a shape" with "you still build a real object matching it." Resolved via the lesson's
+  own `Point` example rather than her actual homework interface, so she still wrote her own call
+  site unaided (and then genuinely hit + fixed a missing-required-property error for real).
+- Playback stated Node's coercion as "string + number = number," over-generalizing from the
+  lesson's `"5" * 2 → 10` demo to `+`, where it's false (`"5" + 3` is `"53"`). Corrected, but **not
+  re-verified by her running it** — unlike everything else this session, which was confirmed live.
+  Worth a quick real check next time `+` on mixed types comes up, rather than assuming the verbal
+  correction stuck.
+
+**Pick up with — Lesson 10: Your First Typed Fetch** (`lessons/0010-your-first-typed-fetch.html`,
+just renumbered from the held-back `0009`). **Before delivering it, resolve the Vue-prerequisite
+gap**: that file assumes `ref()` and `onMounted()`, which no lesson has taught. Decide whether a
+short "what a component is" lesson needs inserting first (matches the original arc's item 8), or
+whether to trim this file down to just the typed-fetch/interface parts and defer Vue reactivity to
+its own lesson. Given Track A urgency (see JSM section below), lean toward whichever gets her to a
+real, typed API call fastest — ask her directly rather than deciding unilaterally, this is exactly
+the kind of ordering call the ordering-decision note further down says to make *with* her.
+
+## RESUME HERE (session 7, 22 July 2026 — kept for continuity, superseded above)
 
 **Lesson 8 CLOSED.** `lessons/0008-error-handling.html` written and delivered same session. Full detail
 in [[learning-records/0012-lesson-8-complete]]. `try`/`catch` and `response.ok` now in `GLOSSARY.md`, plus
