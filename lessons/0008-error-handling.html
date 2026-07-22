@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson 8 — Error handling: three ways "wrong" looks</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<header class="masthead">
+  <p class="eyebrow">Lesson 08 · Run Planner · async &amp; fetch</p>
+  <h1>Error handling: three ways &ldquo;wrong&rdquo; looks</h1>
+  <p class="standfirst">Last lesson you wrote the happy path and it worked first time &mdash; that&rsquo;s
+  the trap. Real code has to ask <strong>&ldquo;did it actually work?&rdquo;</strong> and that question
+  splits into three separate checks, because <code>fetch</code> only tells you about one of them. You&rsquo;ve
+  already <em>seen</em> two of the three go wrong &mdash; today you name them and handle them on purpose.
+  About 25 minutes.</p>
+</header>
+
+<div class="ask">
+  <strong>I&rsquo;m your teacher for this.</strong> This lesson has one idea wearing three coats:
+  &ldquo;did it work?&rdquo; is not one question, it&rsquo;s three, and each one needs a different piece of
+  code. If any output on your screen doesn&rsquo;t match what I describe &mdash; especially the two failures
+  you trigger on purpose &mdash; stop and tell me exactly what you see. Reading the mismatch is the skill,
+  same as last time.
+</div>
+
+<h2>Why this one now</h2>
+
+<p>Your <code>getWeather.js</code> from Lesson 7 assumes the sun always shines: the network is up, the host
+  answers, the status is good, and the body has what you asked for. Every one of those can fail
+  independently, and you&rsquo;ve already watched two of them happen with your own eyes:</p>
+
+<ul>
+  <li>You ran <code>curl.exe -i</code> against a made-up place, <code>zzzzz</code>, and got back
+    <code>200 OK</code> &mdash; a <em>good</em> status &mdash; with no <code>results</code> key at all.</li>
+  <li>Lesson 6 called a <code>404</code> &ldquo;a successful round trip&rdquo; &mdash; the server answered,
+    it just answered &ldquo;not found.&rdquo;</li>
+</ul>
+
+<p>Neither of those is a network failure. <code>fetch</code> did its job in both cases. That&rsquo;s the
+  hinge for today.</p>
+
+<h2>The one idea: &ldquo;did it work?&rdquo; is three separate checks</h2>
+
+<p><code>fetch</code>&rsquo;s Promise only <strong>rejects</strong> &mdash; the thing <code>catch</code>
+  catches &mdash; when there was <strong>no response at all</strong>: the network is down, the host
+  doesn&rsquo;t exist, the request never completed. That&rsquo;s a narrower event than &ldquo;something went
+  wrong&rdquo; &mdash; a <code>404</code> or a <code>500</code> is still a response, so as far as the Promise
+  is concerned, it resolved fine. So you need three checks, stacked, each answering a question the one before
+  it can&rsquo;t:</p>
+
+<div class="callout">
+  <span class="label">The picture to hold</span>
+  <p>Think of mailing a letter. <strong>Check 1</strong> is &ldquo;did the letter even get delivered, or did
+  it bounce back to me undeliverable?&rdquo; (no address exists &mdash; <em>you</em> never hear from the
+  recipient at all). <strong>Check 2</strong> is &ldquo;the letter arrived &mdash; what does the reply
+  say?&rdquo; It might say &ldquo;yes,&rdquo; or it might say &ldquo;no such person here&rdquo; &mdash; either
+  way, you got a reply, so check 1 already passed. <strong>Check 3</strong> is &ldquo;the reply says
+  &lsquo;yes&rsquo; &mdash; but did they actually enclose the document I asked for, or is the envelope
+  empty?&rdquo;</p>
+</div>
+
+<p class="filename">getWeather.js &mdash; Lesson 7&rsquo;s happy path, about to grow three checks</p>
+<pre><code>async function findPlace(name) {
+  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${name}&amp;count=5`;
+
+  const response = await fetch(url);
+  const data = await response.json();
+
+  console.log(data.results);
+}</code></pre>
+
+<h3>Check 1 &mdash; <code>try</code>/<code>catch</code>: did a response come back at all?</h3>
+<p>This is the only one of the three that <code>fetch</code>&rsquo;s Promise itself signals, by
+  <strong>rejecting</strong>. An <code>await</code> on a rejected Promise <em>throws</em> &mdash; and
+  <code>try</code>/<code>catch</code> is how JavaScript lets you catch a throw without crashing the whole
+  program.</p>
+<pre><code>try {
+  const response = await fetch(url);
+  // ...
+} catch (err) {
+  console.log("No response at all:", err.message);
+}</code></pre>
+<p>Everything that can throw &mdash; both <code>await</code>s &mdash; needs to sit inside the <code>try</code>
+  block, because either one could be the line that fails.</p>
+
+<h3>Check 2 &mdash; <code>response.ok</code>: was it a good status?</h3>
+<p>Once you&rsquo;re past <code>catch</code>, you have a real <strong>Response</strong> object &mdash;
+  <code>fetch</code> did its job. But &ldquo;did its job&rdquo; and &ldquo;good news&rdquo; are different
+  things. <code>response.ok</code> is a boolean shortcut: <code>true</code> for status codes 200&ndash;299,
+  <code>false</code> for everything else, including your <code>404</code>. You check it <em>before</em> you
+  trust the body:</p>
+<pre><code>if (!response.ok) {
+  console.log("Bad status:", response.status);
+  return;
+}</code></pre>
+
+<h3>Check 3 &mdash; is the thing you asked for actually in the body?</h3>
+<p>This is your <code>zzzzz</code> case, and it&rsquo;s the one no built-in shortcut checks for you &mdash;
+  it&rsquo;s specific to <em>this</em> API&rsquo;s contract, not HTTP in general. A <code>200</code> with an
+  absent <code>results</code> key passes both checks above and still isn&rsquo;t what you wanted:</p>
+<pre><code>if (!data.results) {
+  console.log("No matches for that name.");
+  return;
+}</code></pre>
+
+<p>Put together, all three checks in one function:</p>
+<pre><code>async function findPlace(name) {
+  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${name}&amp;count=5`;
+
+  try {
+    const response = await fetch(url);           // check 1 lives around this
+
+    if (!response.ok) {                           // check 2
+      console.log("Bad status:", response.status);
+      return;
+    }
+
+    const data = await response.json();
+
+    if (!data.results) {                          // check 3
+      console.log("No matches for that name.");
+      return;
+    }
+
+    console.log(data.results);
+  } catch (err) {                                 // check 1's other half
+    console.log("No response at all:", err.message);
+  }
+}</code></pre>
+
+<div class="callout">
+  <span class="label">/jargon &mdash; <code>try</code>/<code>catch</code>, <code>response.ok</code></span>
+  <p><strong><code>try</code>/<code>catch</code>:</strong> a block that runs code which might
+  <em>throw</em>, and a second block that runs only if it did, instead of crashing the program. An
+  <code>await</code> on a rejected Promise is one way to throw.</p>
+  <p><strong><code>response.ok</code>:</strong> a boolean on the Response object &mdash; <code>true</code>
+  for HTTP status 200&ndash;299, <code>false</code> otherwise. It does not look at the body at all, only the
+  status line.</p>
+  <p><strong>Handle:</strong> <code>try</code>/<code>catch</code> is &ldquo;did the letter bounce back
+  undeliverable?&rdquo; <code>response.ok</code> is &ldquo;the reply arrived &mdash; does it say yes?&rdquo;</p>
+  <p><strong>Where the analogy breaks:</strong> a real bounced letter and a real &ldquo;no&rdquo; reply look
+  different in your mailbox. In code, both a network failure and <em>ignoring</em> <code>response.ok</code>
+  can look deceptively similar if you don&rsquo;t check &mdash; your code just carries on to
+  <code>.json()</code> either way unless you stop it.</p>
+  <p><strong>In a sentence:</strong> &ldquo;I wrap the fetch in <code>try</code>/<code>catch</code> for
+  network failure, then check <code>response.ok</code> before I trust the body.&rdquo;</p>
+  <p><strong>Common misuse:</strong> assuming <code>catch</code> alone is &ldquo;error handling done.&rdquo;
+  A <code>404</code> never throws &mdash; it sails straight past <code>catch</code> and into your
+  <code>.json()</code> call looking like success, unless <code>response.ok</code> stops it first.</p>
+</div>
+
+<div class="callout gotcha">
+  <span class="label">The bug you&rsquo;ll see most: trusting <code>catch</code> to mean &ldquo;handled&rdquo;</span>
+  <p>AI-generated <code>fetch</code> code very often has a <code>try</code>/<code>catch</code> and stops
+  there &mdash; it <em>looks</em> defensive. But a <code>404</code> or <code>500</code> resolves the Promise
+  just fine, so it never enters <code>catch</code> at all. Code that only wraps <code>fetch</code> in
+  <code>try</code>/<code>catch</code> will happily try to read the body of an error page as if it were your
+  data. When you review someone&rsquo;s <code>fetch</code> call, ask specifically: <em>where&rsquo;s the
+  <code>response.ok</code> check?</em> If it&rsquo;s missing, that&rsquo;s a real gap, not a style nitpick
+  &mdash; exactly the &ldquo;say why it&rsquo;s right or wrong&rdquo; skill from your mission.</p>
+</div>
+
+<h2>Check yourself</h2>
+
+<div class="quiz" data-answer="1"
+     data-explain="fetch's promise only rejects when no response came back at all — a dead host, no network. A 404 is a response the server sent; the Promise resolves fine, so catch never runs for it.">
+  <p class="quiz-q">A request to a bad hostname that doesn&rsquo;t exist will&hellip;</p>
+  <button class="quiz-choice">resolve with status 404</button>
+  <button class="quiz-choice">reject, so catch runs</button>
+  <button class="quiz-choice">resolve with an empty body</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="quiz" data-answer="2"
+     data-explain="404 is still a delivered response — fetch's promise resolves fine and catch never fires. response.ok is false, so check 2 is the one that catches this, not check 1.">
+  <p class="quiz-q">A request that returns <code>404</code> will&hellip;</p>
+  <button class="quiz-choice">throw, so catch runs</button>
+  <button class="quiz-choice">never resolve</button>
+  <button class="quiz-choice">resolve, with response.ok false</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="quiz" data-answer="0"
+     data-explain="The zzzzz case: 200 OK (passes check 1 and check 2) but no results key. Nothing HTTP-level flags this — it's specific to this API's contract, which is exactly why check 3 exists separately."
+     >
+  <p class="quiz-q">Your <code>zzzzz</code> search &mdash; <code>200 OK</code>, no <code>results</code> key
+  &mdash; is caught by which check?</p>
+  <button class="quiz-choice">check 3 only</button>
+  <button class="quiz-choice">check 1, the try/catch</button>
+  <button class="quiz-choice">check 2, response.ok</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="task">
+  <h3>Your turn &mdash; add all three checks, then break each one on purpose</h3>
+  <p>Start from your working <code>getWeather.js</code> and grow it. Write the checks yourself from the
+  pattern above &mdash; don&rsquo;t paste mine verbatim.</p>
+  <ol>
+    <li><strong>Add all three checks</strong> to <code>findPlace</code>: <code>try</code>/<code>catch</code>
+      around both <code>await</code>s, a <code>response.ok</code> check with a status log, and a
+      <code>data.results</code> presence check.</li>
+    <li><strong>Trigger check 1</strong>: change the URL&rsquo;s hostname to something that doesn&rsquo;t
+      exist &mdash; e.g. <code>https://this-host-does-not-exist.invalid/...</code> &mdash; and run it. Read
+      what lands in <code>err.message</code>. Confirm your <code>catch</code> block, and only that block,
+      ran.</li>
+    <li><strong>Trigger check 2</strong>: find or construct a URL that returns a real <code>404</code>
+      against Open-Meteo (a wrong path segment works &mdash; e.g. swap <code>/v1/search</code> for
+      <code>/v1/nonsense</code>). Confirm <code>catch</code> did <em>not</em> run and your
+      <code>response.ok</code> branch caught it instead.</li>
+    <li><strong>Trigger check 3</strong>: search for <code>"zzzzz"</code> again, now through your updated
+      function. Confirm it prints your &ldquo;no matches&rdquo; message instead of crashing on
+      <code>undefined</code>.</li>
+  </ol>
+  <p>The win: three real, distinct failures, each caught by the specific check built for it &mdash; not one
+  catch-all that quietly misses two of the three.</p>
+</div>
+
+<p>Then <strong>play it back to me in your own words</strong>: <em>what does <code>try</code>/<code>catch</code>
+  actually catch, what does <code>response.ok</code> catch that it doesn&rsquo;t, and what does check 3 catch
+  that neither of the others can see?</em> When that&rsquo;s solid, <code>try</code>/<code>catch</code> and
+  <code>response.ok</code> go in your
+  <a href="file:///C:/Users/Michelle/.claude/GLOSSARY.md">glossary</a>.</p>
+
+<h2>Read this</h2>
+
+<p><strong>Primary source:</strong>
+  <a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch">MDN &mdash; Using the
+  Fetch API</a>, specifically the &ldquo;Checking that the fetch was successful&rdquo; section &mdash; the
+  exact <code>response.ok</code> gotcha, from the same page you skimmed in Lesson 7. If you want the
+  <code>try</code>/<code>catch</code> mechanics on their own terms (not fetch-specific),
+  <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/try...catch">MDN
+  &mdash; try...catch</a> is the reference.</p>
+
+<h2>Next</h2>
+
+<p>You now have a fetch that tells the truth about failure &mdash; but everything in it is still untyped:
+  <code>data.results</code> could be anything as far as your editor knows, and nothing stops you from typing
+  <code>data.resutls</code> and finding out at runtime. <strong>Lesson 9 starts TypeScript from the ground
+  up</strong> &mdash; why types exist, annotations, interfaces &mdash; earning its place right here, at
+  &ldquo;I want my editor to know what shape this response is.&rdquo; After that, the held-back typed fetch
+  lesson (currently sitting under a stale filename and lesson number from an earlier draft &mdash; it&rsquo;ll
+  get renumbered into its real slot when its turn comes) finally has everything it needs.</p>
+
+<footer class="lesson-footer">
+  <p>Lesson 8 of the Run Planner course ·
+  <a href="0007-fetch-async-await.html">&larr; Lesson 7</a> ·
+  <a href="../reference/open-meteo.html">Open-Meteo reference</a> ·
+  <a href="../MISSION.md">Mission</a> · <a href="../NOTES.md">Lesson plan</a></p>
+  <p><em>Questions are the point. Ask me anything about this lesson in the session.</em></p>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

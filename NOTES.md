@@ -58,36 +58,41 @@ wherever the choice exists.
 The exact lesson cadence (lecture-then-exam vs lecture-only vs review-only) was asked but never
 settled. Current format: short explainer, retrieval quiz, then a task she does herself.
 
-## RESUME HERE (last updated end of session 6, 21 July 2026)
+## RESUME HERE (last updated session 7, 22 July 2026)
 
-**Lesson 7 WRITTEN and delivered** — `lessons/0007-fetch-async-await.html`. Scope deliberately split
-per one-concept-per-lesson: **L7 = the async happy path only** (Promise / `async` / `await` / `fetch`
-+ the two-await pattern + the forgotten-`await` bug). **All error handling held for L8** (`try`/`catch`,
-`response.ok`, empty-200 / 404-is-success). The L8 "Next" section already seeds this and ties back to
-the `zzzzz` empty-200 she observed.
+**Lesson 8 CLOSED.** `lessons/0008-error-handling.html` written and delivered same session. Full detail
+in [[learning-records/0012-lesson-8-complete]]. `try`/`catch` and `response.ok` now in `GLOSSARY.md`, plus
+a three-part-check entry tying the concepts together, plus a new "forgotten-await doesn't always throw"
+nuance discovered live this session.
 
-**Lesson 7 CLOSED.** She wrote & ran `getWeather.js`, did the remove-an-`await` break herself, reasoned
-about the `TypeError` unaided, and played back strong. `Promise` / `async` / `await` now in `GLOSSARY.md`
-(with the forgotten-`await` tell + the two-awaits-are-sequential note). Full detail + the two precision
-corrections in [[learning-records/0011-lesson-7-complete]].
+**She found a real bug unaided in her homework** (`scratch/getWeatherBasicRequestResponsePractice.js`):
+missing `await` on `response.json()`. Only surfaced because she was asked to test a real place name
+instead of just her `"zzzzz"` case — worth continuing to push "test the case you haven't tried" as a
+general habit, not just for this lesson.
 
-**Two corrections she took cleanly (log for the pattern):** (1) "empty" → `undefined`, and *timing race*
-→ *deterministic category error* ("kept the ticket, not the coat"); (2) two awaits are *sequential/
-dependent*, not "independent" — reserved the word "independent" for `Promise.all` later. **`Promise.all`
-is now an owed thread** — pay it off when genuinely parallel requests appear.
+**Recurrence to watch:** the timing-race-vs-deterministic-category-error slip from L7
+([[learning-records/0011-lesson-7-complete]]) recurred once this session (described the missing-`await`
+result as "got headers before body returned" rather than "the Promise itself is what's stored"). She
+self-corrected cleanly both times when shown the coat-ticket framing. Not yet a standing misconception —
+but if it recurs a third time, address it head-on rather than as a wording nudge.
 
-**Pick up with — Lesson 8: error handling (NOT YET WRITTEN).** The half held back from L7. Build on TWO
-things she's already *observed*: the `zzzzz` empty-200 (good status, no `results`) and today's forgotten-
-`await` `TypeError`. Hinge concept: **`fetch` only *rejects* on "no response at all" (network/host); a
-`404` is a *resolved* Promise** (MDN `Fetch_API/Using_Fetch`). So "did it work?" is a deliberate 3-part
-check: `try`/`catch` (did a response come back?) → `response.ok` / status (was it a good one?) → is the
-data actually in the body (her empty-200). The L7 file's "Next" section already frames all three. One-
-concept-per-lesson still holds — if `try`/`catch` + `response.ok` + body-presence feels heavy, split the
-network-failure path (`try`/`catch`) from the status/body checks.
+**Numbering snag surfaced while writing L8 — do not let this recur:** the held-back typed-fetch file is
+still `lessons/0009-your-first-typed-fetch.html`, but its *internal* title/eyebrow/footer text is stale
+from an even earlier draft (`<title>Lesson 1</title>`, eyebrow `Lesson 05`, footer says `Lesson 7 of the
+Run Planner course`, body text says "Lesson 8 turns the hardcoded Boulder..."). None of that was touched
+this session — it's still held back, not being delivered. **Before that file is ever delivered**, its
+title/eyebrow/footer/body lesson-number references all need correcting to whatever slot it actually lands
+in, same as the session-6 `git mv` fix but this time a content fix, not just a filename. L8's "Next"
+section deliberately does **not** link to `0009-your-first-typed-fetch.html` by name, to avoid implying
+that file is "Lesson 9" — it isn't; Lesson 9 is TypeScript-from-scratch, not yet written, and doesn't have
+a claimed number/file yet.
 
-**Then arc continues:** TypeScript from the ground up (earns its place at "type the response"), then the
-held-back typed fetch (`0009-your-first-typed-fetch.html`). Do not pull TS forward abstractly — same
-"too technical" failure as the first Lesson 1 draft — unless reading `.ts` becomes a live work blocker.
+**Pick up with — Lesson 9: TypeScript from the ground up (NOT YET WRITTEN).** Earns its place at "I want my editor
+to know what shape this response is" — motivated directly by L8's untyped `data.results`. Do not pull TS
+forward abstractly — same "too technical" failure as the first Lesson 1 draft — unless reading `.ts`
+becomes a live work blocker. When L9 is written, resolve the numbering snag above: give the held-back
+typed-fetch file its real number (likely `0010`) and fix its internal stale references via `git mv` +
+content edit, same as the session-6 precedent.
 
 **The `zzzzz` empty-200 loop from L6 IS now closed** — she ran `curl.exe -i ...name=zzzzz`, saw
 `200 OK`, `Content-Length: 32`, body `{"generationtime_ms":0.44596195}`, **no `results` key**. By her
