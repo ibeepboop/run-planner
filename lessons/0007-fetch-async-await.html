@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson 7 — fetch, async & await: getting the data back</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<header class="masthead">
+  <p class="eyebrow">Lesson 07 · Run Planner · async &amp; fetch</p>
+  <h1>fetch, async &amp; await: the value that isn&rsquo;t here yet</h1>
+  <p class="standfirst">One idea: some values <em>take time</em> to arrive, so JavaScript hands you a
+  <strong>Promise</strong> &mdash; a receipt for a value that isn&rsquo;t ready &mdash; and
+  <code>await</code> is you waiting at the counter until it is. Today you write the actual JavaScript
+  that sends the request you mapped in Lesson 6 and hands you the response. Happy path only: what to do
+  when it goes <em>wrong</em> is Lesson 8. About 25 minutes.</p>
+</header>
+
+<div class="ask">
+  <strong>I&rsquo;m your teacher for this.</strong> This is the lesson where async JavaScript finally
+  arrives &mdash; and it arrives with a real reason, not as an abstract exercise. A network round trip
+  takes time, so the code that starts it can&rsquo;t just hand you the answer on the next line; it has
+  to hand you something that <em>stands in</em> for the answer until it&rsquo;s ready. That stand-in is
+  the whole concept. If any output on your screen doesn&rsquo;t match what I describe &mdash; especially
+  when you deliberately break it &mdash; stop and tell me. Reading what actually came back is the skill.
+</div>
+
+<h2>Why this one now</h2>
+
+<p>Last lesson you learned what an API call <em>is</em> &mdash; a request you send and a response you
+  read. You even fired one by hand with <code>curl</code>. This lesson is the JavaScript that does that
+  for you: <code>fetch</code>. And it&rsquo;s the exact shape of your JSM task &mdash; <em>send a
+  request to a third party, wait for the answer, read it</em> &mdash; so the concept you learn on safe
+  Open-Meteo ground is the same one you&rsquo;ll point at Atlassian later.</p>
+
+<p>There&rsquo;s a catch that forces a new idea. A round trip takes time &mdash; tens or hundreds of
+  milliseconds. JavaScript runs <strong>one thing at a time</strong> (it is &ldquo;single-threaded&rdquo;
+  &mdash; one worker, one task at a time). If that one worker simply <em>stopped and waited</em> for the
+  network, your entire page would freeze &mdash; no scrolling, no clicks &mdash; until the reply came
+  back. So JavaScript refuses to block. Instead it needs a way to say &ldquo;start this now, let me carry
+  on, and I&rsquo;ll deal with the result when it shows up.&rdquo; That way is the Promise.</p>
+
+<h2>The one new idea: a Promise is a receipt</h2>
+
+<p>When you start something that takes time, JavaScript can&rsquo;t give you the result &mdash; it
+  isn&rsquo;t ready. So it gives you a <strong>Promise</strong> instead: an object that stands in for a
+  value that will arrive later.</p>
+
+<div class="callout">
+  <span class="label">The picture to hold</span>
+  <p>Think of a coat check. You hand over your coat and immediately get a <strong>numbered
+  ticket</strong>. The ticket isn&rsquo;t your coat &mdash; it&rsquo;s a <em>claim</em> on a coat that
+  will be handed back later. A <strong>Promise is that ticket.</strong> And <code>await</code> is you
+  standing at the counter with the ticket until they bring the coat, so that you walk away holding the
+  <em>coat itself</em>, not the ticket.</p>
+</div>
+
+<p>Here is the whole pattern &mdash; the JavaScript version of the <code>curl</code> you ran last
+  lesson. Read it slowly; every line earns its place, and I annotate each below.</p>
+
+<p class="filename">getWeather.js &mdash; a plain file you run with <code>node getWeather.js</code></p>
+<pre><code>async function findPlace(name) {
+  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${name}&amp;count=5`;
+
+  const response = await fetch(url);      // wait #1 &mdash; the round trip
+  const data = await response.json();     // wait #2 &mdash; reading the body
+
+  console.log(data.results);
+}
+
+findPlace("Boulder");</code></pre>
+
+<p>Four things are new here. Take them in order:</p>
+
+<h3><code>fetch(url)</code> &mdash; the thing that takes time</h3>
+<p><code>fetch</code> is the built-in function that sends the request. Because a request takes time, it
+  does <strong>not</strong> return the response &mdash; it returns a <strong>Promise</strong> (the coat
+  ticket) the instant you call it. Note the backtick string building the URL is your Lesson 1
+  <a href="0001-functions-arrows-strings.html">template literal</a>, and <code>const</code> is habit by
+  now &mdash; nothing new there. What&rsquo;s new is only what <code>fetch</code> hands back.</p>
+
+<h3><code>await</code> &mdash; wait for the value, then unwrap it</h3>
+<p><code>await</code> sits in front of a Promise and says: <em>pause this function here until the value
+  is ready, then give me the value itself, not the ticket.</em> So <code>await fetch(url)</code>
+  evaluates to the actual <strong>Response</strong> object &mdash; the thing carrying the status code and
+  headers from Lesson 6.</p>
+
+<h3>The <em>second</em> <code>await</code> &mdash; why there are two</h3>
+<p>This surprises everyone, and it&rsquo;s the same idea a second time. <code>fetch</code>&rsquo;s Promise
+  resolves as soon as the response <em>headers</em> arrive &mdash; the status code, the content type &mdash;
+  but the <strong>body</strong> (the JSON you actually want) may still be streaming in over the wire.
+  So reading the body is <em>also</em> a thing that takes time. <code>response.json()</code> returns
+  <em>another</em> Promise, and you <code>await</code> it too. Two things take time &rarr; two
+  <code>await</code>s. Once it resolves, <code>data</code> is the parsed object &mdash; the same JSON you
+  saw in <code>curl</code>, now a real JavaScript value you can reach into (<code>data.results</code>).</p>
+
+<h3><code>async</code> &mdash; the keyword that licenses <code>await</code></h3>
+<p>You can only use <code>await</code> inside a function marked <code>async</code>. That word is the
+  permission slip: it tells JavaScript &ldquo;this function may pause partway through and resume later,
+  so don&rsquo;t expect it to finish in one go.&rdquo; A side effect worth knowing now (it matters in
+  Lesson 8): an <code>async</code> function <em>always</em> hands back a Promise itself &mdash; calling
+  <code>findPlace("Boulder")</code> starts the work and returns a ticket of its own.</p>
+
+<div class="callout">
+  <span class="label">/jargon &mdash; Promise, async, await</span>
+  <p><strong>Promise:</strong> an object that stands in for a value that isn&rsquo;t ready yet. It will
+  later <em>resolve</em> (the value arrived) or <em>reject</em> (it went wrong &mdash; Lesson 8). A
+  function that starts slow work returns one immediately so your program isn&rsquo;t stuck waiting.</p>
+  <p><strong><code>await</code>:</strong> put it before a Promise to pause the current function until that
+  Promise resolves, then evaluate to the resolved <em>value</em> (not the Promise). <strong><code>async</code>:</strong>
+  the keyword on the function that permits <code>await</code> inside it.</p>
+  <p><strong>Handle:</strong> the Promise is a coat-check ticket &mdash; a claim on something not ready
+  yet. <code>await</code> is waiting at the counter until they swap your ticket for the coat.
+  <code>async</code> is the sign on the door saying &ldquo;people in here are allowed to wait at
+  counters.&rdquo;</p>
+  <p><strong>Where the analogy breaks:</strong> at a real coat check you stand there idle. The point of a
+  Promise is the opposite &mdash; while your function is paused at an <code>await</code>, the single
+  JavaScript worker is <em>free</em> to run other code (handle a click, another request). Your function
+  is parked; the program is not frozen.</p>
+  <p><strong>In a sentence:</strong> &ldquo;<code>fetch</code> returns a Promise, so I <code>await</code>
+  it to get the Response, then <code>await</code> <code>.json()</code> to get the data.&rdquo;</p>
+  <p><strong>Common misuse:</strong> forgetting <code>await</code> &mdash; then your variable holds the
+  <em>ticket</em>, not the value, and every line after it is working with the wrong thing. That&rsquo;s
+  the next box, because it&rsquo;s the bug you&rsquo;ll meet most.</p>
+</div>
+
+<div class="callout gotcha">
+  <span class="label">The bug you&rsquo;ll see most: the forgotten <code>await</code></span>
+  <p>Drop one <code>await</code> and nothing errors &mdash; it just goes quietly wrong. Write
+  <code>const response = fetch(url);</code> (no <code>await</code>) and <code>response</code> holds the
+  <strong>Promise</strong>, not the Response. Ask it for <code>.json()</code> and you get an error like
+  <code>response.json is not a function</code>, because a Promise has no such method &mdash; the coat does,
+  the ticket doesn&rsquo;t. And if you just <code>console.log</code> an un-awaited fetch you&rsquo;ll see
+  <code>Promise { &lt;pending&gt; }</code> &mdash; JavaScript telling you plainly &ldquo;you&rsquo;re
+  holding a ticket.&rdquo;</p>
+  <p>This is a top reason to read AI-written async code carefully: a missing <code>await</code> looks
+  almost right and runs without crashing at the call site. When you review a <code>fetch</code>, checking
+  that every Promise-returning call is <code>await</code>ed is a concrete, repeatable move &mdash; exactly
+  the &ldquo;say why it&rsquo;s right or wrong&rdquo; skill from your mission.</p>
+</div>
+
+<h2>Check yourself</h2>
+
+<div class="quiz" data-answer="0"
+     data-explain="fetch's promise resolves to the Response object — status and headers. It is NOT the JSON yet; that needs the second await on response.json(). And it is not still a promise, because await unwrapped it.">
+  <p class="quiz-q">Once it resolves, <code>await fetch(url)</code> evaluates to&hellip;</p>
+  <button class="quiz-choice">the response object</button>
+  <button class="quiz-choice">the parsed json</button>
+  <button class="quiz-choice">the pending promise</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="quiz" data-answer="1"
+     data-explain="No await means the variable holds the promise itself — the ticket, not the coat. Nothing errors on that line, which is exactly why the bug is easy to miss. Logging it shows Promise { <pending> }.">
+  <p class="quiz-q">You write <code>const r = fetch(url);</code> with no <code>await</code>. What is in
+  <code>r</code>?</p>
+  <button class="quiz-choice">the finished data</button>
+  <button class="quiz-choice">a pending promise</button>
+  <button class="quiz-choice">an error object</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="quiz" data-answer="0"
+     data-explain="fetch resolves as soon as the response headers arrive; the body can still be streaming. Reading it is its own slow step, so response.json() returns a second promise you must await too.">
+  <p class="quiz-q">Reading the JSON body needs a <em>second</em> <code>await</code> because the body&hellip;</p>
+  <button class="quiz-choice">arrives after the headers</button>
+  <button class="quiz-choice">is always cached first</button>
+  <button class="quiz-choice">was never sent back</button>
+  <p class="quiz-feedback"></p>
+</div>
+
+<div class="task">
+  <h3>Your turn &mdash; write the fetch yourself, then break it on purpose</h3>
+  <p>You write this one; don&rsquo;t paste mine. Generating it from memory is the point &mdash; the coat
+  check should feel like <em>your</em> sentence by the end. Plain file, run with <code>node</code>, no
+  Vue, no build tooling.</p>
+  <ol>
+    <li><strong>Create <code>getWeather.js</code></strong> anywhere convenient (your scratch folder is
+      fine). Write an <code>async</code> function that takes a place name, <code>fetch</code>es the
+      Open-Meteo geocoding URL for it, <code>await</code>s the response, <code>await</code>s
+      <code>.json()</code>, and <code>console.log</code>s <code>data.results</code>. Then call it with
+      <code>"Boulder"</code>.</li>
+    <li><strong>Run it:</strong> <code>node getWeather.js</code>. You should see an array of matches
+      printed &mdash; real data, from code you wrote. Look for <strong>two</strong> Boulders (Colorado and
+      Montana). If you only want the interesting fields, try
+      <code>console.log(data.results.map(r =&gt; r.name + ", " + r.admin1))</code> &mdash; your Lesson 2
+      <a href="0002-callbacks-map-filter.html"><code>.map()</code></a>, put to work.</li>
+    <li><strong>Now remove one <code>await</code></strong> &mdash; the one in front of <code>fetch</code>
+      &mdash; and run it again. Read the error (or log <code>response</code> directly and read what
+      prints). Tell me exactly what you see and, in your words, <em>why</em> that&rsquo;s what a missing
+      <code>await</code> does. This is the reading skill, live.</li>
+  </ol>
+  <p>The win: you wrote real async code, saw genuine API data come back, and watched the single most
+  common async bug happen on purpose so you&rsquo;ll recognise it on sight in someone else&rsquo;s code.</p>
+</div>
+
+<p>Then <strong>play it back to me in your own words</strong>: <em>what is a Promise, what does
+  <code>await</code> do, and why are there two <code>await</code>s in the fetch pattern?</em> When
+  that&rsquo;s solid it goes in your <a href="file:///C:/Users/Michelle/.claude/GLOSSARY.md">glossary</a>,
+  and we move to the part I deliberately held back: what happens when the call goes <em>wrong</em>.</p>
+
+<h2>Read this</h2>
+
+<p><strong>Primary source:</strong>
+  <a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch">MDN &mdash; Using the
+  Fetch API</a>. The canonical, high-trust walkthrough of exactly this pattern &mdash; <code>fetch</code>,
+  <code>await</code>, and <code>response.json()</code> &mdash; from the people who document the web. Read
+  the opening and the &ldquo;Making requests&rdquo; section; the error-handling parts are Lesson 8, so
+  skim those for now. If the Promise idea itself feels slippery,
+  <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises">MDN &mdash;
+  Using promises</a> is the gentle companion piece.</p>
+
+<h2>Next</h2>
+
+<p><strong>Lesson 8</strong> is the half I held back: <strong>error handling</strong>. Right now your code
+  assumes the sun always shines. But remember the <code>zzzzz</code> search you ran &mdash;
+  <code>200 OK</code> with <em>no <code>results</code> key at all</em>? And the <code>404</code> that
+  Lesson 6 called &ldquo;a successful round trip&rdquo;? Here&rsquo;s the hinge that ties them together:
+  <code>fetch</code>&rsquo;s Promise only <em>rejects</em> when there was <strong>no response at all</strong>
+  (network down, bad host). A <code>404</code>, to <code>fetch</code>, is a Promise that resolved just
+  fine &mdash; job done. So &ldquo;did it work?&rdquo; becomes a deliberate three-part check:
+  <code>try</code>/<code>catch</code> for &ldquo;did I get a response?&rdquo;, then
+  <code>response.ok</code> for the status code, then &ldquo;is the data actually in the body?&rdquo; for
+  your empty-<code>200</code>. That&rsquo;s next.</p>
+
+<footer class="lesson-footer">
+  <p>Lesson 7 of the Run Planner course ·
+  <a href="0006-what-an-api-call-is.html">&larr; Lesson 6</a> ·
+  <a href="../reference/open-meteo.html">Open-Meteo reference</a> ·
+  <a href="../MISSION.md">Mission</a> · <a href="../NOTES.md">Lesson plan</a></p>
+  <p><em>Questions are the point. Ask me anything about this lesson in the session.</em></p>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

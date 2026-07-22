@@ -58,7 +58,44 @@ wherever the choice exists.
 The exact lesson cadence (lecture-then-exam vs lecture-only vs review-only) was asked but never
 settled. Current format: short explainer, retrieval quiz, then a task she does herself.
 
-## RESUME HERE (last updated end of session 5, 21 July 2026)
+## RESUME HERE (last updated end of session 6, 21 July 2026)
+
+**Lesson 7 WRITTEN and delivered** — `lessons/0007-fetch-async-await.html`. Scope deliberately split
+per one-concept-per-lesson: **L7 = the async happy path only** (Promise / `async` / `await` / `fetch`
++ the two-await pattern + the forgotten-`await` bug). **All error handling held for L8** (`try`/`catch`,
+`response.ok`, empty-200 / 404-is-success). The L8 "Next" section already seeds this and ties back to
+the `zzzzz` empty-200 she observed.
+
+**Lesson 7 CLOSED.** She wrote & ran `getWeather.js`, did the remove-an-`await` break herself, reasoned
+about the `TypeError` unaided, and played back strong. `Promise` / `async` / `await` now in `GLOSSARY.md`
+(with the forgotten-`await` tell + the two-awaits-are-sequential note). Full detail + the two precision
+corrections in [[learning-records/0011-lesson-7-complete]].
+
+**Two corrections she took cleanly (log for the pattern):** (1) "empty" → `undefined`, and *timing race*
+→ *deterministic category error* ("kept the ticket, not the coat"); (2) two awaits are *sequential/
+dependent*, not "independent" — reserved the word "independent" for `Promise.all` later. **`Promise.all`
+is now an owed thread** — pay it off when genuinely parallel requests appear.
+
+**Pick up with — Lesson 8: error handling (NOT YET WRITTEN).** The half held back from L7. Build on TWO
+things she's already *observed*: the `zzzzz` empty-200 (good status, no `results`) and today's forgotten-
+`await` `TypeError`. Hinge concept: **`fetch` only *rejects* on "no response at all" (network/host); a
+`404` is a *resolved* Promise** (MDN `Fetch_API/Using_Fetch`). So "did it work?" is a deliberate 3-part
+check: `try`/`catch` (did a response come back?) → `response.ok` / status (was it a good one?) → is the
+data actually in the body (her empty-200). The L7 file's "Next" section already frames all three. One-
+concept-per-lesson still holds — if `try`/`catch` + `response.ok` + body-presence feels heavy, split the
+network-failure path (`try`/`catch`) from the status/body checks.
+
+**Then arc continues:** TypeScript from the ground up (earns its place at "type the response"), then the
+held-back typed fetch (`0009-your-first-typed-fetch.html`). Do not pull TS forward abstractly — same
+"too technical" failure as the first Lesson 1 draft — unless reading `.ts` becomes a live work blocker.
+
+**The `zzzzz` empty-200 loop from L6 IS now closed** — she ran `curl.exe -i ...name=zzzzz`, saw
+`200 OK`, `Content-Length: 32`, body `{"generationtime_ms":0.44596195}`, **no `results` key**. By her
+own observation this time, not assertion. That observation is the live hinge L8 builds on.
+
+**Node is v24** — global `fetch` is stable, no experimental warning. Task instructions assume this.
+
+**--- L6 highlights below, still relevant for the L8 error-handling lesson ---**
 
 **Lesson 6 DONE.** `API call` played back strong + unaided, now in `GLOSSARY.md`. Full detail in
 [[learning-records/0010-lesson-6-complete]]. Highlights that matter for next session:
@@ -216,12 +253,14 @@ a commit, and later a branch and a PR. The repo currently has **zero commits**.
 
 ## Renumbering note
 
-Lesson files on disk are `0001-functions-arrows-strings.html` and
-`0007-your-first-typed-fetch.html`. The latter is now **Lesson 8** in this arc and will be
-renumbered when it is unlocked — do not renumber it again before then; the file has already been
-moved twice and its encoding damaged once by a careless PowerShell rewrite. If renaming, use the
-`Write` tool or `[System.IO.File]::WriteAllText` with an explicit UTF-8 encoding, never
-`Get-Content | Set-Content`.
+**Resolved, end of session 6.** The held-back typed-fetch lesson was renamed
+`0007-your-first-typed-fetch.html` → **`0009-your-first-typed-fetch.html`** to free `0007` for the
+new async lesson, and because `0009` matches its actual arc position (item 9, "First typed fetch").
+Done with `git mv` — a pure rename, **no content rewrite**, so the encoding-damage hazard (a careless
+`Get-Content | Set-Content` in an earlier session) did not apply. Disk number now agrees with arc
+number; the churn is closed — no further renumbering of that file is expected. If a lesson file ever
+*does* need its contents rewritten, still use the `Write` tool or
+`[System.IO.File]::WriteAllText` with explicit UTF-8, never `Get-Content | Set-Content`.
 
 ## Verified API facts (checked live, 2026-07-21)
 
